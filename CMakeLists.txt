@@ -22,5 +22,6 @@ file(GLOB_RECURSE ARC_SRC
 )
 
 add_executable(arc ${ARC_SRC})
-target_link_libraries(arc PRIVATE ${llvm_libs})
-target_link_libraries(arc PRIVATE ${LLD_EXPORTED_TARGETS})
+# Temporarily stop linking with LLVM until we need it, to improve compile times.
+# target_link_libraries(arc PRIVATE ${llvm_libs})
+# target_link_libraries(arc PRIVATE ${LLD_EXPORTED_TARGETS})
