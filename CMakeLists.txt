@@ -19,6 +19,7 @@ message(STATUS "Using LLD libraries: ${LLD_EXPORTED_TARGETS}")
 
 file(GLOB_RECURSE ARC_SRC
     src/*.cpp
+    src/*.h
 )
 
 add_executable(arc ${ARC_SRC})
