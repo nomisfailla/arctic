@@ -128,11 +128,11 @@ namespace arc
 	struct expr_binary : public expr
 	{
 		const binary_op op;
-		const std::unique_ptr<expr> lhs;
-		const std::unique_ptr<expr> rhs;
+		const std::shared_ptr<expr> lhs;
+		const std::shared_ptr<expr> rhs;
 
-		expr_binary(binary_op op, std::unique_ptr<expr>& lhs, std::unique_ptr<expr>& rhs)
-			: op(op), lhs(std::move(lhs)), rhs(std::move(rhs))
+		expr_binary(binary_op op, const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& rhs)
+			: op(op), lhs(lhs), rhs(rhs)
 		{
 		}
 
@@ -152,10 +152,10 @@ namespace arc
 	struct expr_unary : public expr
 	{
 		const unary_op op;
-		const std::unique_ptr<expr> rhs;
+		const std::shared_ptr<expr> rhs;
 
-		expr_unary(unary_op op, std::unique_ptr<expr>& rhs)
-			: op(op), rhs(std::move(rhs))
+		expr_unary(unary_op op, const std::shared_ptr<expr>& rhs)
+			: op(op), rhs(rhs)
 		{
 		}
 
@@ -164,11 +164,11 @@ namespace arc
 
 	struct expr_call : public expr
 	{
-		const std::unique_ptr<expr> lhs;
-		const std::vector<std::unique_ptr<expr>> args;
+		const std::shared_ptr<expr> lhs;
+		const std::vector<std::shared_ptr<expr>> args;
 
-		expr_call(std::unique_ptr<expr>& lhs, std::vector<std::unique_ptr<expr>> args)
-			: lhs(std::move(lhs)), args(std::move(args))
+		expr_call(const std::shared_ptr<expr>& lhs, const std::vector<std::shared_ptr<expr>>& args)
+			: lhs(lhs), args(args)
 		{
 		}
 
@@ -177,11 +177,11 @@ namespace arc
 
 	struct expr_index : public expr
 	{
-		const std::unique_ptr<expr> lhs;
-		const std::unique_ptr<expr> index;
+		const std::shared_ptr<expr> lhs;
+		const std::shared_ptr<expr> index;
 
-		expr_index(std::unique_ptr<expr>& lhs, std::unique_ptr<expr>& index)
-			: lhs(std::move(lhs)), index(std::move(index))
+		expr_index(const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& index)
+			: lhs(lhs), index(index)
 		{
 		}
 
@@ -190,11 +190,11 @@ namespace arc
 
 	struct expr_access : public expr
 	{
-		const std::unique_ptr<expr> lhs;
+		const std::shared_ptr<expr> lhs;
 		const std::string field;
 
-		expr_access(std::unique_ptr<expr>& lhs, const std::string& field)
-			: lhs(std::move(lhs)), field(field)
+		expr_access(const std::shared_ptr<expr>& lhs, const std::string& field)
+			: lhs(lhs), field(field)
 		{
 		}
 
@@ -222,9 +222,9 @@ namespace arc
 
 	struct typespec_pointer : public typespec
 	{
-		const std::unique_ptr<typespec> base;
+		const std::shared_ptr<typespec> base;
 
-		typespec_pointer(std::unique_ptr<typespec>& base)
+		typespec_pointer(const std::shared_ptr<typespec>& base)
 			: base(std::move(base))
 		{
 		}
@@ -239,12 +239,12 @@ namespace arc
 
 	};
 
-	struct stmt_expr : public expr
+	struct stmt_expr : public stmt
 	{
-		const std::unique_ptr<expr> expression;
+		const std::shared_ptr<expr> expression;
 
-		stmt_expr(std::unique_ptr<expr>& expression)
-			: expression(std::move(expression))
+		stmt_expr(const std::shared_ptr<expr>& expression)
+			: expression(expression)
 		{
 		}
 
@@ -254,11 +254,11 @@ namespace arc
 	struct stmt_let : public stmt
 	{
 		const std::string name;
-		const std::unique_ptr<typespec> type;
-		const std::unique_ptr<expr> initializer;
+		const std::shared_ptr<typespec> type;
+		const std::shared_ptr<expr> initializer;
 
-		stmt_let(const std::string& name, std::unique_ptr<typespec>& type, std::unique_ptr<expr>& initializer)
-			: name(name), type(std::move(type)), initializer(std::move(initializer))
+		stmt_let(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer)
+			: name(name), type(type), initializer(initializer)
 		{
 		}
 
@@ -268,11 +268,11 @@ namespace arc
 	struct stmt_const : public stmt
 	{
 		const std::string name;
-		const std::unique_ptr<typespec> type;
-		const std::unique_ptr<expr> initializer;
+		const std::shared_ptr<typespec> type;
+		const std::shared_ptr<expr> initializer;
 
-		stmt_const(const std::string& name, std::unique_ptr<typespec>& type, std::unique_ptr<expr>& initializer)
-			: name(name), type(std::move(type)), initializer(std::move(initializer))
+		stmt_const(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer)
+			: name(name), type(type), initializer(initializer)
 		{
 		}
 
@@ -281,10 +281,10 @@ namespace arc
 
 	struct stmt_return : public stmt
 	{
-		const std::unique_ptr<expr> ret_expr;
+		const std::shared_ptr<expr> expression;
 
-		stmt_return(std::unique_ptr<expr>& expr)
-			: ret_expr(std::move(expr))
+		stmt_return(const std::shared_ptr<expr>& expression)
+			: expression(expression)
 		{
 		}
 
@@ -327,10 +327,10 @@ namespace arc
 	struct func_arg
 	{
 		const std::string name;
-		const std::unique_ptr<typespec> type;
+		const std::shared_ptr<typespec> type;
 
-		func_arg(const std::string& name, std::unique_ptr<typespec>& type)
-			: name(name), type(std::move(type))
+		func_arg(const std::string& name, const std::shared_ptr<typespec>& type)
+			: name(name), type(type)
 		{
 		}
 	};
@@ -339,11 +339,11 @@ namespace arc
 	{
 		const std::string name;
 		const std::vector<func_arg> arguments;
-		const std::unique_ptr<typespec> ret_type;
-		const std::vector<std::unique_ptr<stmt>> body;
+		const std::shared_ptr<typespec> ret_type;
+		const std::vector<std::shared_ptr<stmt>> body;
 
-		decl_func(const std::string& name, const std::vector<func_arg>& arguments, std::unique_ptr<typespec>& ret_type, std::vector<std::unique_ptr<stmt>>& body)
-			: name(name), arguments(arguments), ret_type(std::move(ret_type)), body(std::move(body))
+		decl_func(const std::string& name, const std::vector<func_arg>& arguments, const std::shared_ptr<typespec>& ret_type, const std::vector<std::shared_ptr<stmt>>& body)
+			: name(name), arguments(arguments), ret_type(ret_type), body(body)
 		{
 		}
 
@@ -353,11 +353,11 @@ namespace arc
 	struct struct_field
 	{
 		const std::string name;
-		const std::unique_ptr<typespec> type;
 		const bool is_const;
+		const std::shared_ptr<typespec> type;
 
-		struct_field(const std::string& name, std::unique_ptr<typespec>& type, bool is_const)
-			: name(name), type(std::move(type)), is_const(is_const)
+		struct_field(const std::string& name, const std::shared_ptr<typespec>& type, bool is_const)
+			: name(name), type(type), is_const(is_const)
 		{
 		}
 	};
@@ -381,86 +381,86 @@ namespace arc
 
 	static auto inline make_integer_expr(uint64_t value)
 	{
-		return std::make_unique<expr_integer>(value);
+		return std::shared_ptr<expr_integer>(new expr_integer(value));
 	}
 
 	static auto inline make_name_expr(const std::string& name)
 	{
-		return std::make_unique<expr_name>(name);
+		return std::shared_ptr<expr_name>(new expr_name(name));
 	}
 
-	static auto inline make_binary_expr(binary_op op, std::unique_ptr<expr> lhs, std::unique_ptr<expr> rhs)
+	static auto inline make_binary_expr(binary_op op, const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& rhs)
 	{
-		return std::make_unique<expr_binary>(op, lhs, rhs);
+		return std::shared_ptr<expr_binary>(new expr_binary(op, lhs, rhs));
 	}
 
-	static auto inline make_unary_expr(unary_op op, std::unique_ptr<expr> rhs)
+	static auto inline make_unary_expr(unary_op op, const std::shared_ptr<expr>& rhs)
 	{
-		return std::make_unique<expr_unary>(op, rhs);
+		return std::shared_ptr<expr_unary>(new expr_unary(op, rhs));
 	}
 
-	static auto inline make_call_expr(std::unique_ptr<expr> lhs, std::vector<std::unique_ptr<expr>> args)
+	static auto inline make_call_expr(const std::shared_ptr<expr>& lhs, const std::vector<std::shared_ptr<expr>>& args)
 	{
-		return std::make_unique<expr_call>(lhs, args);
+		return std::shared_ptr<expr_call>(new expr_call(lhs, args));
 	}
 
-	static auto inline make_index_expr(std::unique_ptr<expr> lhs, std::unique_ptr<expr> index)
+	static auto inline make_index_expr(const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& index)
 	{
-		return std::make_unique<expr_index>(lhs, index);
+		return std::shared_ptr<expr_index>(new expr_index(lhs, index));
 	}
 
-	static auto inline make_access_expr(std::unique_ptr<expr> lhs, const std::string& field)
+	static auto inline make_access_expr(const std::shared_ptr<expr>& lhs, const std::string& field)
 	{
-		return std::make_unique<expr_access>(lhs, field);
+		return std::shared_ptr<expr_access>(new expr_access(lhs, field));
 	}
 
 	static auto inline make_name_typespec(const std::string& name)
 	{
-		return std::make_unique<typespec_name>(name);
+		return std::shared_ptr<typespec_name>(new typespec_name(name));
 	}
 
-	static auto inline make_pointer_typespec(std::unique_ptr<typespec> base)
+	static auto inline make_pointer_typespec(const std::shared_ptr<typespec>& base)
 	{
-		return std::make_unique<typespec_pointer>(base);
+		return std::shared_ptr<typespec_pointer>(new typespec_pointer(base));
 	}
 
-	static auto inline make_expr_stmt(std::unique_ptr<expr> expression)
+	static auto inline make_expr_stmt(const std::shared_ptr<expr>& expression)
 	{
-		return std::make_unique<stmt_expr>(expression);
+		return std::shared_ptr<stmt_expr>(new stmt_expr(expression));
 	}
 
-	static auto inline make_let_stmt(const std::string& name, std::unique_ptr<typespec> type, std::unique_ptr<expr> initializer)
+	static auto inline make_let_stmt(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer)
 	{
-		return std::make_unique<stmt_let>(name, type, initializer);
+		return std::shared_ptr<stmt_let>(new stmt_let(name, type, initializer));
 	}
 
-	static auto inline make_const_stmt(const std::string& name, std::unique_ptr<typespec> type, std::unique_ptr<expr> initializer)
+	static auto inline make_const_stmt(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer)
 	{
-		return std::make_unique<stmt_const>(name, type, initializer);
+		return std::shared_ptr<stmt_const>(new stmt_const(name, type, initializer));
 	}
 
-	static auto inline make_return_stmt(std::unique_ptr<expr> ret_expr)
+	static auto inline make_return_stmt(const std::shared_ptr<expr>& ret_expr)
 	{
-		return std::make_unique<expr>(ret_expr);
+		return std::shared_ptr<stmt_return>(new stmt_return(ret_expr));
 	}
 
 	static auto inline make_import_decl(const std::string& path)
 	{
-		return std::make_unique<decl_import>(path);
+		return std::shared_ptr<decl_import>(new decl_import(path));
 	}
 
 	static auto inline make_namespace_decl(const std::string& name)
 	{
-		return std::make_unique<decl_namespace>(name);
+		return std::shared_ptr<decl_namespace>(new decl_namespace(name));
 	}
 
-	static auto inline make_func_decl(const std::string& name, const std::vector<func_arg>& arguments, std::unique_ptr<typespec> ret_type, std::vector<std::unique_ptr<stmt>> body)
+	static auto inline make_func_decl(const std::string& name, const std::vector<func_arg>& arguments, const std::shared_ptr<typespec>& ret_type, const std::vector<std::shared_ptr<stmt>>& body)
 	{
-		return std::make_unique<decl_func>(name, arguments, ret_type, body);
+		return std::shared_ptr<decl_func>(new decl_func(name, arguments, ret_type, body));
 	}
 	
 	static auto inline make_struct_decl(const std::string name, const std::vector<struct_field>& fields)
 	{
-		return std::make_unique<decl_struct>(name, fields);
+		return std::shared_ptr<decl_struct>(new decl_struct(name, fields));
 	}
 }
