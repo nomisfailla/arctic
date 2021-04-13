@@ -1,5 +1,8 @@
 #pragma once
 
+#include <functional>
+
+#include "token.h"
 #include "../util/source_file.h"
 
 namespace arc
@@ -42,15 +45,22 @@ namespace arc
             return c;
         }
 
-        char peek() const
+        char peek(int o = 0) const
         {
-            return _buffer[_ptr];
+            return _buffer[_ptr + o];
         }
 
         source_pos position() const
         {
             return _cur_pos;
         }
+    };
+
+    struct lexed_number
+    {
+        bool is_float;
+        uint64_t val_int;
+        double val_float;
     };
 
     class lexer
@@ -61,6 +71,10 @@ namespace arc
     public:
         lexer(const source_file& source);
 
-        void lex();
+        std::vector<token> lex();
+    private:
+        std::string parse_identifier();
+        uint64_t parse_number(uint32_t base, std::function<bool(char)> predicate);
+        lexed_number parse_number();
     };
 }
