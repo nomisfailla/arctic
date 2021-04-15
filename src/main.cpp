@@ -10,6 +10,16 @@ static void usage(int argc, const char** argv)
 	std::cout << "usage: " << argv[0] << " <file>" << std::endl;
 }
 
+static std::string format_error(const arc::line_exception& ex)
+{
+	std::string error = "";
+
+	error += "error: " + ex.error + " at " + std::to_string(ex.position.line) + ":" + std::to_string(ex.position.column) + "\n";
+	error += std::to_string(ex.position.line) + " | " + ex.file.get_line(ex.position.line) + "\n";
+
+	return error;
+}
+
 int main(int argc, const char** argv)
 {
 	if(argc == 2)
@@ -25,8 +35,7 @@ int main(int argc, const char** argv)
 			}
 			catch(const arc::line_exception& ex)
 			{
-				std::cout << "error: " << ex.error << " at " << ex.position.line << ":" << ex.position.column << std::endl;
-				std::cout << ex.position.line << " | " << ex.file.get_line(ex.position.line) << std::endl;
+				std::cout << format_error(ex);
 			}
 		}
 		else

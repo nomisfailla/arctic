@@ -80,7 +80,7 @@ namespace arc
     {
         if(!_stream.has_next() || !predicate(_stream.peek()))
         {
-            throw arc::line_exception("malformed integer literal", _source, _stream.position());
+            throw line_exception("malformed integer literal", _source, _stream.position());
         }
 
         uint64_t val = 0;
@@ -308,9 +308,8 @@ namespace arc
             if(quad("<=<=", token_type::less, token_type::less_eq, token_type::dbl_less, token_type::dbl_less_eq)) { continue; }
             
             auto _cur_pos = _stream.position();
-            std::cout << "unknown character at " << _cur_pos.line << ":" << _cur_pos.column << std::endl;
-            std::cout << _source.get_line(_cur_pos.line) << std::endl;
-            std::exit(1);
+
+            throw line_exception("unexpected character", _source, _cur_pos);
         }
 
         return tokens;
