@@ -31,6 +31,7 @@ namespace arc
         comma,       // ,
         colon,       // :
         dbl_colon,   // ::
+        dot,         // .
 
         // operators
         plus,        // +
@@ -60,6 +61,12 @@ namespace arc
         amp_eq,      // &=
         dbl_amp,     // &&,
         tilde,       // ~
+        eq,          // =
+        dbl_eq,      // ==
+        bang,        // !
+        bang_eq,     // !=
+        percent,     // %
+        percent_eq,  // %=
 
         eof
     };
@@ -75,6 +82,26 @@ namespace arc
         token(token_type type, token_value value, source_pos position)
             : type(type), value(value), position(position)
         {
+        }
+
+        double val_double() const
+        {
+            return std::get<double>(value);
+        }
+
+        uint64_t val_integer() const
+        {
+            return std::get<uint64_t>(value);
+        }
+
+        bool val_boolean() const
+        {
+            return std::get<bool>(value);
+        }
+
+        std::string val_string() const
+        {
+            return std::get<std::string>(value);
         }
     };
 }

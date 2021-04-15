@@ -146,7 +146,11 @@ namespace arc
 		deref,       // *
 		address,     // &
 		bitwise_not, // ~
-		logical_not  // !
+		logical_not, // !
+		postfix_add, // ++
+		postfix_sub, // --
+		prefix_add,  // ++
+		prefix_sub   // --
 	};
 
 	struct expr_unary : public expr

@@ -18,4 +18,14 @@ namespace arc
         {
         }
     };
+
+    struct internal_exception : public std::exception
+    {
+        const std::string error;
+
+        internal_exception(const std::string& error)
+            : error(error)
+        {
+        }
+    };
 }

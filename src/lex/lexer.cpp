@@ -295,11 +295,15 @@ namespace arc
             if(single('}', token_type::r_curly )) { continue; }
             if(single(',', token_type::comma   )) { continue; }
             if(single('~', token_type::tilde   )) { continue; }
+            if(single('.', token_type::dot     )) { continue; }
 
             if(dbl("::", token_type::colon,   token_type::dbl_colon )) { continue; }
             if(dbl("*=", token_type::asterix, token_type::asterix_eq)) { continue; }
             if(dbl("/=", token_type::slash,   token_type::slash_eq  )) { continue; }
             if(dbl("^=", token_type::caret,   token_type::caret_eq  )) { continue; }
+            if(dbl("==", token_type::eq,      token_type::dbl_eq    )) { continue; }
+            if(dbl("!=", token_type::bang,    token_type::bang_eq   )) { continue; }
+            if(dbl("%=", token_type::percent, token_type::percent_eq)) { continue; }
 
             if(triple("+=+", token_type::plus,  token_type::plus_eq,  token_type::dbl_plus )) { continue; }
             if(triple("-=-", token_type::minus, token_type::minus_eq, token_type::dbl_minus)) { continue; }
