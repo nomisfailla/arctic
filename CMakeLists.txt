@@ -28,5 +28,5 @@ add_executable(arc ${ARC_SRC})
 # target_link_libraries(arc PRIVATE ${LLD_EXPORTED_TARGETS})
 
 set_target_properties(arc PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
 )
