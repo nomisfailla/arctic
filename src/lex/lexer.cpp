@@ -312,6 +312,8 @@ namespace arc
             throw line_exception("unexpected character", _source, cur_pos);
         }
 
+        tokens.emplace_back(token_type::eof, "eof", _stream.position());
+
         return tokens;
     }
 }
