@@ -3,16 +3,11 @@
 #include <functional>
 
 #include "token.h"
+#include "../error/exceptions.h"
 #include "../util/source_file.h"
 
 namespace arc
 {
-    struct source_pos
-    {
-        size_t line = 1;
-        size_t column = 1;
-    };
-
     class character_stream
     {
     private:

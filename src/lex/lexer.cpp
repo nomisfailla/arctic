@@ -80,9 +80,7 @@ namespace arc
     {
         if(!_stream.has_next() || !predicate(_stream.peek()))
         {
-            // todo: throw exception
-            std::cout << "malformed integer literal!" << std::endl;
-            return 0;
+            throw arc::line_exception("malformed integer literal", _source, _stream.position());
         }
 
         uint64_t val = 0;

@@ -18,11 +18,15 @@ int main(int argc, const char** argv)
 		if(input.exists())
 		{
 			arc::lexer lexer(input);
-			auto tokens = lexer.lex();
 
-			for(const auto& t : tokens)
+			try
 			{
-				std::cout << static_cast<int>(t.type) << std::endl;
+				auto tokens = lexer.lex();
+			}
+			catch(const arc::line_exception& ex)
+			{
+				std::cout << "error: " << ex.error << " at " << ex.position.line << ":" << ex.position.column << std::endl;
+				std::cout << ex.position.line << " | " << ex.file.get_line(ex.position.line) << std::endl;
 			}
 		}
 		else

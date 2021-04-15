@@ -5,6 +5,12 @@
 
 namespace arc
 {
+    struct source_pos
+    {
+        size_t line = 1;
+        size_t column = 1;
+    };
+
     class source_file
     {
     private:
