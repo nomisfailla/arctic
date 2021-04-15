@@ -2,6 +2,8 @@
 
 #include <variant>
 
+#include "../util/source_file.h"
+
 namespace arc
 {
     enum class token_type
@@ -68,9 +70,10 @@ namespace arc
     {
         const token_type type;
         const token_value value;
+        const source_pos position;
 
-        token(token_type type, token_value value)
-            : type(type), value(value)
+        token(token_type type, token_value value, source_pos position)
+            : type(type), value(value), position(position)
         {
         }
     };

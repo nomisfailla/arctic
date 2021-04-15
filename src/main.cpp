@@ -32,6 +32,11 @@ int main(int argc, const char** argv)
 			try
 			{
 				auto tokens = lexer.lex();
+
+				for (const auto& t : tokens)
+				{
+					std::cout << static_cast<int>(t.type) << " @ " << t.position.line << ":" << t.position.column << std::endl;
+				}
 			}
 			catch(const arc::line_exception& ex)
 			{

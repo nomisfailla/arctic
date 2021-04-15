@@ -162,12 +162,14 @@ namespace arc
     {
         std::vector<token> tokens;
 
-        auto emit = [&](token_type type, token_value value = uint64_t(0)) {
-            tokens.emplace_back(type, value);
-        };
-
         while(_stream.has_next())
         {
+            auto cur_pos = _stream.position();
+
+            auto emit = [&](token_type type, token_value value = uint64_t(0)) {
+                tokens.emplace_back(type, value, cur_pos);
+            };
+
             if(is_whitespace(_stream.peek()))
             {
                 _stream.next();
@@ -307,9 +309,7 @@ namespace arc
             if(quad(">=>=", token_type::grtr, token_type::grtr_eq, token_type::dbl_grtr, token_type::dbl_grtr_eq)) { continue; }
             if(quad("<=<=", token_type::less, token_type::less_eq, token_type::dbl_less, token_type::dbl_less_eq)) { continue; }
             
-            auto _cur_pos = _stream.position();
-
-            throw line_exception("unexpected character", _source, _cur_pos);
+            throw line_exception("unexpected character", _source, cur_pos);
         }
 
         return tokens;
