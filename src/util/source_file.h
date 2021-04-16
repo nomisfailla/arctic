@@ -15,12 +15,14 @@ namespace arc
     {
     private:
         bool _exists;
+        std::string _path;
         std::vector<char> _buffer;
     public:
-        source_file(const std::string& path);
+        source_file(const std::string& path, bool is_content = false);
 
         std::string get_line(size_t line) const;
 
+        std::string path() const;
         const char* buffer() const;
         size_t size() const;
         bool exists() const;

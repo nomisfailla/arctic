@@ -8,11 +8,6 @@
 
 #include "test/test_main.h"
 
-static void usage(int argc, const char** argv)
-{
-	std::cout << "usage: " << argv[0] << " <file>" << std::endl;
-}
-
 static std::string format_error(const arc::line_exception& ex)
 {
 	std::string error = "";
@@ -133,6 +128,33 @@ public:
 	}
 };
 
+static void process(const arc::source_file& input)
+{
+	if(input.exists())
+	{
+		try
+		{
+			arc::lexer lexer(input);
+			auto tokens = lexer.lex();
+
+			arc::parser parser(tokens, input);
+			auto expr = parser.parse();
+
+			expression_printer printer;
+			expr->accept(printer);
+			std::cout << std::endl;
+		}
+		catch(const arc::line_exception& ex)
+		{
+			std::cout << format_error(ex);
+		}
+	}
+	else
+	{
+		std::cout << "'" << input.path() << "' not found" << std::endl;
+	}
+}
+
 int main(int argc, const char** argv)
 {
 	if(argc > 1 && std::strcmp(argv[1], "test") == 0)
@@ -142,33 +164,18 @@ int main(int argc, const char** argv)
 
 	if(argc == 2)
 	{
-
 		arc::source_file input(argv[1]);
-		if(input.exists())
-		{
-			try
-			{
-				arc::lexer lexer(input);
-				auto tokens = lexer.lex();
-				
-				arc::parser parser(tokens, input);
-				auto expr = parser.parse();
-
-				expression_printer printer;
-				expr->accept(printer);
-			}
-			catch(const arc::line_exception& ex)
-			{
-				std::cout << format_error(ex);
-			}
-		}
-		else
-		{
-			std::cout << "'" << argv[1] << "' not found" << std::endl;
-		}
+		process(input);
 	}
 	else
 	{
-		usage(argc, argv);
+		while(true)
+		{
+			std::cout << "> ";
+			std::string src;
+			std::getline(std::cin, src);
+			arc::source_file input(src, true);
+			process(input);
+		}
 	}
 }
