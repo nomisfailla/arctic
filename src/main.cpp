@@ -1,9 +1,12 @@
 #include <iostream>
 #include <stack>
+#include <cstring>
 
 #include "lex/lexer.h"
 #include "parse/parser.h"
 #include "util/source_file.h"
+
+#include "test/test_main.h"
 
 static void usage(int argc, const char** argv)
 {
@@ -132,8 +135,14 @@ public:
 
 int main(int argc, const char** argv)
 {
+	if(argc > 1 && std::strcmp(argv[1], "test") == 0)
+	{
+		return arc_test_main(argc, argv);
+	}
+
 	if(argc == 2)
 	{
+
 		arc::source_file input(argv[1]);
 		if(input.exists())
 		{
