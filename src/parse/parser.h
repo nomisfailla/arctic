@@ -93,6 +93,7 @@ namespace arc
         parser(const std::vector<token>& tokens, const source_file& source);
 
         std::shared_ptr<expr> parse();
+        std::shared_ptr<expr> parse_expr();
     private:
         line_exception parse_error(const std::string& msg);
 
@@ -110,6 +111,5 @@ namespace arc
         std::shared_ptr<expr> parse_expr11();
         std::shared_ptr<expr> parse_expr12();
         std::shared_ptr<expr> parse_expr13();
-        std::shared_ptr<expr> parse_expr();
     };
 }

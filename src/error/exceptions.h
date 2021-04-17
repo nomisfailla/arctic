@@ -17,6 +17,11 @@ namespace arc
             : error(error), file(file), position(position)
         {
         }
+
+        const char* what() const noexcept
+        {
+            return error.c_str();
+        }
     };
 
     struct internal_exception : public std::exception
@@ -26,6 +31,11 @@ namespace arc
         internal_exception(const std::string& error)
             : error(error)
         {
+        }
+        
+        const char* what() const noexcept
+        {
+            return error.c_str();
         }
     };
 }

@@ -65,7 +65,18 @@ namespace arc
 
 	struct expr : public ast_node
 	{
+		bool operator==(const expr& rhs)
+		{
+			if(typeid(*this) != typeid(rhs)) { return false; }
+			return equals(rhs);
+		}
 
+		bool operator!=(const expr& rhs)
+		{
+			return !(*this == rhs);
+		}
+
+		virtual bool equals(const expr& rhs) const = 0;
 	};
 
 	struct expr_integer : public expr
@@ -75,6 +86,12 @@ namespace arc
 		expr_integer(uint64_t value)
 			: value(value)
 		{
+		}
+
+		bool equals(const expr& rhs) const
+		{
+			const expr_integer& r = dynamic_cast<const expr_integer&>(rhs);
+			return this->value == r.value;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -87,6 +104,12 @@ namespace arc
 		expr_name(const std::string& name)
 			: name(name)
 		{
+		}
+
+		bool equals(const expr& rhs) const
+		{
+			const expr_name& r = dynamic_cast<const expr_name&>(rhs);
+			return this->name == r.name;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -136,6 +159,12 @@ namespace arc
 		{
 		}
 
+		bool equals(const expr& rhs) const
+		{
+			const expr_binary& r = dynamic_cast<const expr_binary&>(rhs);
+			return this->op == r.op && *this->lhs == *r.lhs && *this->rhs == *r.rhs;
+		}
+
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
@@ -163,6 +192,12 @@ namespace arc
 		{
 		}
 
+		bool equals(const expr& rhs) const
+		{
+			const expr_unary& r = dynamic_cast<const expr_unary&>(rhs);
+			return this->op == r.op && *this->rhs == *r.rhs;
+		}
+
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
@@ -174,6 +209,21 @@ namespace arc
 		expr_call(const std::shared_ptr<expr>& lhs, const std::vector<std::shared_ptr<expr>>& args)
 			: lhs(lhs), args(args)
 		{
+		}
+
+		bool equals(const expr& rhs) const
+		{
+			const expr_call& r = dynamic_cast<const expr_call&>(rhs);
+			
+			if(*this->lhs != *r.lhs) { return false; }
+			if(this->args.size() != r.args.size()) { return false; }
+
+			for(int i = 0; i < this->args.size(); i++)
+			{
+				if(*this->args[i] != *r.args[i]) { return false; }
+			}
+
+			return true;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -189,6 +239,12 @@ namespace arc
 		{
 		}
 
+		bool equals(const expr& rhs) const
+		{
+			const expr_index& r = dynamic_cast<const expr_index&>(rhs);
+			return *this->lhs == *r.lhs && *this->index == *r.index;
+		}
+
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
@@ -200,6 +256,12 @@ namespace arc
 		expr_access(const std::shared_ptr<expr>& lhs, const std::string& field)
 			: lhs(lhs), field(field)
 		{
+		}
+
+		bool equals(const expr& rhs) const
+		{
+			const expr_access& r = dynamic_cast<const expr_access&>(rhs);
+			return *this->lhs == *r.lhs && this->field == r.field;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -229,7 +291,18 @@ namespace arc
 		const std::shared_ptr<typespec> base;
 
 		typespec_pointer(const std::shared_ptr<typespec>& base)
-			: base(std::move(base))
+			: base(base)
+		{
+		}
+	};
+
+	struct typespec_func : public typespec
+	{
+		const std::shared_ptr<typespec> return_type;
+		const std::vector<std::shared_ptr<typespec>> argument_types;
+
+		typespec_func(const std::shared_ptr<typespec>& return_type, const std::vector<std::shared_ptr<typespec>>& argument_types)
+			: return_type(return_type), argument_types(argument_types)
 		{
 		}
 	};

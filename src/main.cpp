@@ -76,55 +76,58 @@ class expression_printer : public arc::ast_visitor
 public:
 	void visit(const arc::expr_integer& expr)
 	{
-		std::cout << expr.value;
+		std::cout << "integer(" << expr.value << ")";
 	}
 
 	void visit(const arc::expr_name& expr)
 	{
-		std::cout << expr.name;
+		std::cout << "name(" << expr.name << ")";
 	}
 
 	void visit(const arc::expr_binary& expr)
 	{
-		std::cout << "(";
-		expr.lhs->accept(*this);
-		std::cout << " " << binary_op_to_string(expr.op) << " ";
-		expr.rhs->accept(*this);
+		std::cout << "binary(" << std::endl;
+		std::cout << binary_op_to_string(expr.op) << std::endl;
+		expr.lhs->accept(*this); std::cout << std::endl;
+		expr.rhs->accept(*this); std::cout << std::endl;
 		std::cout << ")";
 	}
 
 	void visit(const arc::expr_unary& expr)
 	{
-		std::cout << "(";
-		std::cout << unary_op_to_string(expr.op);
-		expr.rhs->accept(*this);
+		std::cout << "unary(" << std::endl;
+		std::cout << unary_op_to_string(expr.op) << std::endl;
+		expr.rhs->accept(*this); std::cout << std::endl;
 		std::cout << ")";
 	}
 
 	void visit(const arc::expr_call& expr)
 	{
-		expr.lhs->accept(*this);
-		std::cout << "(";
+		std::cout << "call(" << std::endl;
+		expr.lhs->accept(*this); std::cout << std::endl;
+		std::cout << "{" << std::endl;;
 		for(const auto& a : expr.args)
 		{
 			a->accept(*this);
-			std::cout << " ";
+			std::cout << std::endl;
 		}
-		std::cout << ")";
+		std::cout << "}";
 	}
 
 	void visit(const arc::expr_index& expr)
 	{
-		expr.lhs->accept(*this);
-		std::cout << "[";
-		expr.index->accept(*this);
-		std::cout << "]";
+		std::cout << "index(" << std::endl;
+		expr.lhs->accept(*this); std::cout << std::endl;
+		expr.index->accept(*this); std::cout << std::endl;
+		std::cout << ")";
 	}
 
 	void visit(const arc::expr_access& expr)
 	{
-		expr.lhs->accept(*this);
-		std::cout << "." << expr.field;
+		std::cout << "access(" << std::endl;
+		expr.lhs->accept(*this); std::cout << std::endl;
+		std::cout << expr.field << std::endl;
+		std::cout << ")";
 	}
 };
 
