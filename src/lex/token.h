@@ -31,6 +31,7 @@ namespace arc
         comma,       // ,
         colon,       // :
         dbl_colon,   // ::
+        semi_colon,  // ;
         dot,         // .
 
         // operators
@@ -102,6 +103,20 @@ namespace arc
         std::string val_string() const
         {
             return std::get<std::string>(value);
+        }
+
+        template<typename T>
+        bool has_type() const
+        {
+            try
+            {
+                std::get<T>(value);
+                return true;
+            }
+            catch(const std::bad_variant_access& e)
+            {
+                return false;
+            }
         }
     };
 }
