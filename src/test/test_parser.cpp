@@ -154,7 +154,7 @@ TEST_CASE("type parsing produces correct ast", "[parser]")
     }
 
     SECTION("pointer types") {
-        arc::source_file input("u32* u32** u32*** ():u32*", true);
+        arc::source_file input("*u32 **u32 ***u32 *():*u32", true);
         auto tokens = arc::lexer(input).lex();
         auto parser = arc::parser(tokens, input);
 

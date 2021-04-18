@@ -429,9 +429,10 @@ namespace arc
         return parse_expr();
     }
 
-    std::shared_ptr<typespec> parser::parse_typespec_base()
+    std::shared_ptr<typespec> parser::parse_typespec()
     {
         auto token = _stream.expect_one_of({
+            token_type::asterix,
             token_type::identifier,
             token_type::l_paren
         }, [&]() { throw parse_error("expected a type"); });
@@ -455,24 +456,14 @@ namespace arc
             }
             _stream.expect(token_type::r_paren, [&]() { throw parse_error("expected ')'"); });
             _stream.expect(token_type::colon, [&]() { throw parse_error("expected ':'"); });
+
             auto return_type = parse_typespec();
 
             return make_func_typespec(args, return_type);  
         } break;
+        case token_type::asterix: {
+            return make_pointer_typespec(parse_typespec());
+        } break;
         }
-    }
-
-    std::shared_ptr<typespec> parser::parse_typespec()
-    {     
-        auto typespec = parse_typespec_base();
-
-        while(_stream.next_is_one_of({
-            token_type::asterix,
-        })) {
-            _stream.next();
-            typespec = make_pointer_typespec(typespec);
-        }
-
-        return typespec;
     }
 }
