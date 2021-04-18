@@ -179,12 +179,17 @@ namespace arc
             if(is_ident_start_char(_stream.peek()))
             {
                 auto ident = parse_identifier();
-                if(ident == "func"  ) { emit(token_type::func,    "func"  ); continue; }
-                if(ident == "return") { emit(token_type::return_, "return"); continue; }
-                if(ident == "if"    ) { emit(token_type::if_,     "if"    ); continue; }
-                if(ident == "as"    ) { emit(token_type::as,      "as"    ); continue; }
-                if(ident == "true"  ) { emit(token_type::boolean,  true   ); continue; }
-                if(ident == "false" ) { emit(token_type::boolean,  false  ); continue; }
+                if(ident == "func"     ) { emit(token_type::func,       "func"     ); continue; }
+                if(ident == "return"   ) { emit(token_type::return_,    "return"   ); continue; }
+                if(ident == "if"       ) { emit(token_type::if_,        "if"       ); continue; }
+                if(ident == "as"       ) { emit(token_type::as,         "as"       ); continue; }
+                if(ident == "let"      ) { emit(token_type::let,        "let"      ); continue; }
+                if(ident == "const"    ) { emit(token_type::const_,     "const"    ); continue; }
+                if(ident == "import"   ) { emit(token_type::import,     "import"   ); continue; }
+                if(ident == "namespace") { emit(token_type::namespace_, "namespace"); continue; }
+                if(ident == "alias"    ) { emit(token_type::alias,      "alias"    ); continue; }
+                if(ident == "true"     ) { emit(token_type::boolean,    true       ); continue; }
+                if(ident == "false"    ) { emit(token_type::boolean,    false      ); continue; }
 
                 emit(token_type::identifier, ident);
                 continue;

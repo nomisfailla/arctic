@@ -13,6 +13,11 @@ namespace arc
         return_,     // return
         if_,         // if
         as,          // as
+        let,         // let
+        const_,      // const
+        import,      // import
+        namespace_,  // namespace
+        alias,       // alias
 
         // literals
         boolean,     // true/false
