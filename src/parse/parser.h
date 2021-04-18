@@ -94,6 +94,8 @@ namespace arc
 
         std::shared_ptr<expr> parse();
         std::shared_ptr<expr> parse_expr();
+
+        std::shared_ptr<typespec> parse_typespec();
     private:
         line_exception parse_error(const std::string& msg);
 
@@ -111,5 +113,7 @@ namespace arc
         std::shared_ptr<expr> parse_expr11();
         std::shared_ptr<expr> parse_expr12();
         std::shared_ptr<expr> parse_expr13();
+        
+        std::shared_ptr<typespec> parse_typespec_base();
     };
 }

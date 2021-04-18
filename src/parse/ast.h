@@ -273,7 +273,18 @@ namespace arc
 
 	struct typespec
 	{
+		bool operator==(const typespec& rhs)
+		{
+			if(typeid(*this) != typeid(rhs)) { return false; }
+			return equals(rhs);
+		}
 
+		bool operator!=(const typespec& rhs)
+		{
+			return !(*this == rhs);
+		}
+
+		virtual bool equals(const typespec& rhs) const = 0;
 	};
 
 	struct typespec_name : public typespec
@@ -283,6 +294,12 @@ namespace arc
 		typespec_name(const std::string& name)
 			: name(name)
 		{
+		}
+
+		bool equals(const typespec& rhs) const
+		{
+			const typespec_name& r = dynamic_cast<const typespec_name&>(rhs);
+			return this->name == r.name;
 		}
 	};
 
@@ -294,16 +311,37 @@ namespace arc
 			: base(base)
 		{
 		}
+		
+		bool equals(const typespec& rhs) const
+		{
+			const typespec_pointer& r = dynamic_cast<const typespec_pointer&>(rhs);
+			return *this->base == *r.base;
+		}
 	};
 
 	struct typespec_func : public typespec
 	{
-		const std::shared_ptr<typespec> return_type;
 		const std::vector<std::shared_ptr<typespec>> argument_types;
+		const std::shared_ptr<typespec> return_type;
 
-		typespec_func(const std::shared_ptr<typespec>& return_type, const std::vector<std::shared_ptr<typespec>>& argument_types)
-			: return_type(return_type), argument_types(argument_types)
+		typespec_func(const std::vector<std::shared_ptr<typespec>>& argument_types, const std::shared_ptr<typespec>& return_type)
+			: argument_types(argument_types), return_type(return_type)
 		{
+		}
+		
+		bool equals(const typespec& rhs) const
+		{
+			const typespec_func& r = dynamic_cast<const typespec_func&>(rhs);
+
+			if(*this->return_type != *r.return_type) { return false; }
+			if(this->argument_types.size() != r.argument_types.size()) { return false; }
+			
+			for(int i = 0; i < this->argument_types.size(); i++)
+			{
+				if(*this->argument_types[i] != *r.argument_types[i]) { return false; }
+			}
+
+			return true;
 		}
 	};
 
@@ -499,6 +537,11 @@ namespace arc
 	static auto inline make_pointer_typespec(const std::shared_ptr<typespec>& base)
 	{
 		return std::shared_ptr<typespec_pointer>(new typespec_pointer(base));
+	}
+
+	static auto inline make_func_typespec(const std::vector<std::shared_ptr<typespec>>& argument_types, const std::shared_ptr<typespec>& return_type)
+	{
+		return std::shared_ptr<typespec_func>(new typespec_func(argument_types, return_type));
 	}
 
 	static auto inline make_expr_stmt(const std::shared_ptr<expr>& expression)

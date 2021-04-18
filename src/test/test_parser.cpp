@@ -9,6 +9,11 @@ namespace
     {
         return *lhs == *rhs;
     }
+    
+    bool typespec_equals(const std::shared_ptr<arc::typespec>& lhs, const std::shared_ptr<arc::typespec>& rhs)
+    {
+        return *lhs == *rhs;
+    }
 }
 
 TEST_CASE("expression parsing completes or fails properly", "[parser]")
@@ -33,7 +38,8 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 {
     SECTION("basic expression case") {
         arc::source_file input("1 + 2", true);
-        auto expr = arc::parser(arc::lexer(input).lex(), input).parse_expr();
+        auto tokens = arc::lexer(input).lex();
+        auto expr = arc::parser(tokens, input).parse_expr();
 
         auto expected = arc::make_binary_expr(
             arc::binary_op::add,
@@ -46,7 +52,8 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 
     SECTION("complex expression case") {
         arc::source_file input("-1 + 2 / 3 == hello.world - my.array[7]", true);
-        auto expr = arc::parser(arc::lexer(input).lex(), input).parse_expr();
+        auto tokens = arc::lexer(input).lex();
+        auto expr = arc::parser(tokens, input).parse_expr();
     
         auto expected = arc::make_binary_expr(
             arc::binary_op::equality,
@@ -83,7 +90,8 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 
     SECTION("function call") {
         arc::source_file input("some.function(1, 2, 3)", true);
-        auto expr = arc::parser(arc::lexer(input).lex(), input).parse_expr();
+        auto tokens = arc::lexer(input).lex();
+        auto expr = arc::parser(tokens, input).parse_expr();
     
         auto expected = arc::make_call_expr(
             arc::make_access_expr(
@@ -98,5 +106,50 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
         );
 
         REQUIRE(expr_equals(expr, expected));
+    }
+}
+
+TEST_CASE("type parsing completes or fails properly", "[parser]")
+{
+    SECTION("basic pass case") {
+        arc::source_file input("u32 bool u32* u32** (u32, u8):bool ():u8* ():(u8):bool", true);
+        auto tokens = arc::lexer(input).lex();
+        REQUIRE_NOTHROW(arc::parser(tokens, input).parse_typespec());
+    }
+
+    SECTION("func type fail") {
+        arc::source_file input("(u8", true);
+        auto tokens = arc::lexer(input).lex();
+        REQUIRE_THROWS(arc::parser(tokens, input).parse_typespec());
+    }
+}
+
+TEST_CASE("type parsing produces correct ast", "[parser]")
+{
+    SECTION("basic types") {
+        arc::source_file input("u32 ():none (u32):none (u32, bool):none", true);
+        auto tokens = arc::lexer(input).lex();
+        auto parser = arc::parser(tokens, input);
+
+        std::vector<std::shared_ptr<arc::typespec>> expected_types = {
+            arc::make_name_typespec("u32"),
+
+            arc::make_func_typespec({
+            }, arc::make_name_typespec("none")),
+
+            arc::make_func_typespec({
+                arc::make_name_typespec("u32")
+            }, arc::make_name_typespec("none")),
+
+            arc::make_func_typespec({
+                arc::make_name_typespec("u32"),
+                arc::make_name_typespec("bool")
+            }, arc::make_name_typespec("none"))
+        };
+
+        for(const auto& expected : expected_types)
+        {
+            REQUIRE(typespec_equals(parser.parse_typespec(), expected));
+        }
     }
 }
