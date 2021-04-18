@@ -152,4 +152,42 @@ TEST_CASE("type parsing produces correct ast", "[parser]")
             REQUIRE(typespec_equals(parser.parse_typespec(), expected));
         }
     }
+
+    SECTION("pointer types") {
+        arc::source_file input("u32* u32** u32*** ():u32*", true);
+        auto tokens = arc::lexer(input).lex();
+        auto parser = arc::parser(tokens, input);
+
+        std::vector<std::shared_ptr<arc::typespec>> expected_types = {
+            arc::make_pointer_typespec(
+                arc::make_name_typespec("u32")
+            ),
+
+            arc::make_pointer_typespec(
+                arc::make_pointer_typespec(
+                    arc::make_name_typespec("u32")
+                )
+            ),
+
+            arc::make_pointer_typespec(
+                arc::make_pointer_typespec(
+                    arc::make_pointer_typespec(
+                        arc::make_name_typespec("u32")
+                    )
+                )
+            ),
+
+            arc::make_pointer_typespec(
+                arc::make_func_typespec({
+                }, arc::make_pointer_typespec(
+                    arc::make_name_typespec("u32")
+                ))
+            )
+        };
+
+        for(const auto& expected : expected_types)
+        {
+            REQUIRE(typespec_equals(parser.parse_typespec(), expected));
+        }
+    }
 }

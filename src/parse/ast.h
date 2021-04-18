@@ -3,6 +3,7 @@
 #include <memory>
 #include <utility>
 #include <string>
+#include <vector>
 
 namespace arc
 {
