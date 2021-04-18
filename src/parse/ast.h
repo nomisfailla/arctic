@@ -432,17 +432,24 @@ namespace arc
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
+	struct if_branch
+	{
+		const std::shared_ptr<expr> condition;
+		const std::vector<std::shared_ptr<stmt>> body;
+
+		if_branch(const std::shared_ptr<expr> condition, const std::vector<std::shared_ptr<stmt>> body)
+			: condition(condition), body(body)
+		{
+		}
+	};
+
 	struct stmt_if : public stmt
 	{
-		const std::shared_ptr<expr> if_condition;
-		const std::vector<std::shared_ptr<expr>> else_if_conditions;
-		const std::shared_ptr<expr> else_condition;
+		const std::vector<if_branch> if_branches;
+		const if_branch else_branch;
 
-		stmt_if(
-			const std::shared_ptr<expr>& if_condition,
-			const std::vector<std::shared_ptr<expr>>& else_if_conditions,
-			const std::shared_ptr<expr>& else_condition
-		) : if_condition(if_condition), else_if_conditions(else_if_conditions), else_condition(else_condition)
+		stmt_if(const std::vector<if_branch>& if_branches, const if_branch& else_branch)
+			: if_branches(if_branches), else_branch(else_branch)
 		{
 		}
 
@@ -625,12 +632,9 @@ namespace arc
 		return std::shared_ptr<stmt_return>(new stmt_return(ret_expr));
 	}
 
-	static auto inline make_if_stmt(
-		const std::shared_ptr<expr>& if_condition,
-		const std::vector<std::shared_ptr<expr>>& else_if_conditions,
-		const std::shared_ptr<expr>& else_condition
-	) {
-		return std::shared_ptr<stmt_if>(new stmt_if(if_condition, else_if_conditions, else_condition));
+	static auto inline make_if_stmt(const std::vector<if_branch>& if_branches, const if_branch& else_branch)
+	{
+		return std::shared_ptr<stmt_if>(new stmt_if(if_branches, else_branch));
 	}
 
 	static auto inline make_import_decl(const std::string& path)
