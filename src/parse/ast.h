@@ -15,11 +15,13 @@ namespace arc
 	struct decl_namespace;
 	struct decl_func;
 	struct decl_struct;
+	struct decl_alias;
 
 	struct stmt_expr;
 	struct stmt_let;
 	struct stmt_const;
 	struct stmt_return;
+	struct stmt_if;
 
 	struct expr_integer;
 	struct expr_name;
@@ -40,11 +42,13 @@ namespace arc
 		virtual void visit(const decl_namespace&) {}
 		virtual void visit(const decl_func&) {}
 		virtual void visit(const decl_struct&) {}
+		virtual void visit(const decl_alias&) {}
 
 		virtual void visit(const stmt_expr&) {}
 		virtual void visit(const stmt_let&) {}
 		virtual void visit(const stmt_const&) {}
 		virtual void visit(const stmt_return&) {}
+		virtual void visit(const stmt_if&) {}
 
 		virtual void visit(const expr_integer&) {}
 		virtual void visit(const expr_name&) {}
@@ -427,6 +431,23 @@ namespace arc
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
+
+	struct stmt_if : public stmt
+	{
+		const std::shared_ptr<expr> if_condition;
+		const std::vector<std::shared_ptr<expr>> else_if_conditions;
+		const std::shared_ptr<expr> else_condition;
+
+		stmt_if(
+			const std::shared_ptr<expr>& if_condition,
+			const std::vector<std::shared_ptr<expr>>& else_if_conditions,
+			const std::shared_ptr<expr>& else_condition
+		) : if_condition(if_condition), else_if_conditions(else_if_conditions), else_condition(else_condition)
+		{
+		}
+
+		void accept(ast_visitor& v) const { v.visit(*this); }
+	};
 	
 	//
 	// Declarations
@@ -512,6 +533,19 @@ namespace arc
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
+	struct decl_alias : public decl
+	{
+		const std::string name;
+		const std::shared_ptr<typespec> type;
+
+		decl_alias(const std::string& name, const std::shared_ptr<typespec>& type)
+			: name(name), type(type)
+		{
+		}
+
+		void accept(ast_visitor& v) const { v.visit(*this); }
+	};
+
 	//
 	// Utilities
 	//
@@ -591,6 +625,14 @@ namespace arc
 		return std::shared_ptr<stmt_return>(new stmt_return(ret_expr));
 	}
 
+	static auto inline make_if_stmt(
+		const std::shared_ptr<expr>& if_condition,
+		const std::vector<std::shared_ptr<expr>>& else_if_conditions,
+		const std::shared_ptr<expr>& else_condition
+	) {
+		return std::shared_ptr<stmt_if>(new stmt_if(if_condition, else_if_conditions, else_condition));
+	}
+
 	static auto inline make_import_decl(const std::string& path)
 	{
 		return std::shared_ptr<decl_import>(new decl_import(path));
@@ -609,5 +651,10 @@ namespace arc
 	static auto inline make_struct_decl(const std::string name, const std::vector<struct_field>& fields)
 	{
 		return std::shared_ptr<decl_struct>(new decl_struct(name, fields));
+	}
+
+	static auto inline make_alias_decl(const std::string& name, const std::shared_ptr<typespec>& type)
+	{
+		return std::shared_ptr<decl_alias>(new decl_alias(name, type));
 	}
 }
