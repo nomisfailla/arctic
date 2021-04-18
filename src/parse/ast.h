@@ -28,6 +28,7 @@ namespace arc
 	struct expr_call;
 	struct expr_index;
 	struct expr_access;
+	struct expr_cast;
 
 	//
 	// Visitor Stuff
@@ -52,12 +53,91 @@ namespace arc
 		virtual void visit(const expr_call&) {}
 		virtual void visit(const expr_index&) {}
 		virtual void visit(const expr_access&) {}
+		virtual void visit(const expr_cast&) {}
 	};
 
 	struct ast_node
 	{
 		virtual ~ast_node() = default;
 		virtual void accept(ast_visitor&) const = 0;
+	};
+
+	//
+	// Typespecs
+	//
+
+	struct typespec
+	{
+		bool operator==(const typespec& rhs)
+		{
+			if(typeid(*this) != typeid(rhs)) { return false; }
+			return equals(rhs);
+		}
+
+		bool operator!=(const typespec& rhs)
+		{
+			return !(*this == rhs);
+		}
+
+		virtual bool equals(const typespec& rhs) const = 0;
+	};
+
+	struct typespec_name : public typespec
+	{
+		const std::string name;
+
+		typespec_name(const std::string& name)
+			: name(name)
+		{
+		}
+
+		bool equals(const typespec& rhs) const
+		{
+			const typespec_name& r = dynamic_cast<const typespec_name&>(rhs);
+			return this->name == r.name;
+		}
+	};
+
+	struct typespec_pointer : public typespec
+	{
+		const std::shared_ptr<typespec> base;
+
+		typespec_pointer(const std::shared_ptr<typespec>& base)
+			: base(base)
+		{
+		}
+
+		bool equals(const typespec& rhs) const
+		{
+			const typespec_pointer& r = dynamic_cast<const typespec_pointer&>(rhs);
+			return *this->base == *r.base;
+		}
+	};
+
+	struct typespec_func : public typespec
+	{
+		const std::vector<std::shared_ptr<typespec>> argument_types;
+		const std::shared_ptr<typespec> return_type;
+
+		typespec_func(const std::vector<std::shared_ptr<typespec>>& argument_types, const std::shared_ptr<typespec>& return_type)
+			: argument_types(argument_types), return_type(return_type)
+		{
+		}
+
+		bool equals(const typespec& rhs) const
+		{
+			const typespec_func& r = dynamic_cast<const typespec_func&>(rhs);
+
+			if(*this->return_type != *r.return_type) { return false; }
+			if(this->argument_types.size() != r.argument_types.size()) { return false; }
+
+			for(int i = 0; i < this->argument_types.size(); i++)
+			{
+				if(*this->argument_types[i] != *r.argument_types[i]) { return false; }
+			}
+
+			return true;
+		}
 	};
 
 	//
@@ -267,83 +347,24 @@ namespace arc
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
-	
-	//
-	// Typespecs
-	//
 
-	struct typespec
+	struct expr_cast : public expr
 	{
-		bool operator==(const typespec& rhs)
-		{
-			if(typeid(*this) != typeid(rhs)) { return false; }
-			return equals(rhs);
-		}
+		const std::shared_ptr<expr> lhs;
+		const std::shared_ptr<typespec> to_type;
 
-		bool operator!=(const typespec& rhs)
-		{
-			return !(*this == rhs);
-		}
-
-		virtual bool equals(const typespec& rhs) const = 0;
-	};
-
-	struct typespec_name : public typespec
-	{
-		const std::string name;
-
-		typespec_name(const std::string& name)
-			: name(name)
+		expr_cast(const std::shared_ptr<expr>& lhs, const std::shared_ptr<typespec>& to_type)
+			: lhs(lhs), to_type(to_type)
 		{
 		}
 
-		bool equals(const typespec& rhs) const
+		bool equals(const expr& rhs) const
 		{
-			const typespec_name& r = dynamic_cast<const typespec_name&>(rhs);
-			return this->name == r.name;
+			const expr_cast& r = dynamic_cast<const expr_cast&>(rhs);
+			return *this->lhs == *r.lhs && *this->to_type == *r.to_type;
 		}
-	};
 
-	struct typespec_pointer : public typespec
-	{
-		const std::shared_ptr<typespec> base;
-
-		typespec_pointer(const std::shared_ptr<typespec>& base)
-			: base(base)
-		{
-		}
-		
-		bool equals(const typespec& rhs) const
-		{
-			const typespec_pointer& r = dynamic_cast<const typespec_pointer&>(rhs);
-			return *this->base == *r.base;
-		}
-	};
-
-	struct typespec_func : public typespec
-	{
-		const std::vector<std::shared_ptr<typespec>> argument_types;
-		const std::shared_ptr<typespec> return_type;
-
-		typespec_func(const std::vector<std::shared_ptr<typespec>>& argument_types, const std::shared_ptr<typespec>& return_type)
-			: argument_types(argument_types), return_type(return_type)
-		{
-		}
-		
-		bool equals(const typespec& rhs) const
-		{
-			const typespec_func& r = dynamic_cast<const typespec_func&>(rhs);
-
-			if(*this->return_type != *r.return_type) { return false; }
-			if(this->argument_types.size() != r.argument_types.size()) { return false; }
-			
-			for(int i = 0; i < this->argument_types.size(); i++)
-			{
-				if(*this->argument_types[i] != *r.argument_types[i]) { return false; }
-			}
-
-			return true;
-		}
+		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
 	//
@@ -528,6 +549,11 @@ namespace arc
 	static auto inline make_access_expr(const std::shared_ptr<expr>& lhs, const std::string& field)
 	{
 		return std::shared_ptr<expr_access>(new expr_access(lhs, field));
+	}
+
+	static auto make_cast_expr(const std::shared_ptr<expr>& lhs, const std::shared_ptr<typespec>& to_type)
+	{
+		return std::shared_ptr<expr_cast>(new expr_cast(lhs, to_type));
 	}
 
 	static auto inline make_name_typespec(const std::string& name)

@@ -113,5 +113,6 @@ namespace arc
         std::shared_ptr<expr> parse_expr11();
         std::shared_ptr<expr> parse_expr12();
         std::shared_ptr<expr> parse_expr13();
+        std::shared_ptr<expr> parse_expr14();
     };
 }

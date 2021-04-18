@@ -196,35 +196,34 @@ namespace arc
         return parse_expr1();
     }
 
-    // lhs * rhs
-    // lhs / rhs
-    // lhs % rhs
+    // expr as type
     std::shared_ptr<expr> parser::parse_expr3()
     {
         auto expr = parse_expr2();
-        while(_stream.next_is_one_of({
-            token_type::asterix,
-            token_type::slash,
-            token_type::percent
-        })) {
-            auto op = classify_binary_op(_stream.next().type);
-            expr = make_binary_expr(
-                op,
+
+        while(_stream.next_is(token_type::as))
+        {
+            _stream.next();
+
+            expr = make_cast_expr(
                 expr,
-                parse_expr2()
+                parse_typespec()
             );
         }
+
         return expr;
     }
 
-    // lhs + rhs
-    // lhs - rhs
+    // lhs * rhs
+    // lhs / rhs
+    // lhs % rhs
     std::shared_ptr<expr> parser::parse_expr4()
     {
         auto expr = parse_expr3();
         while(_stream.next_is_one_of({
-            token_type::plus,
-            token_type::minus
+            token_type::asterix,
+            token_type::slash,
+            token_type::percent
         })) {
             auto op = classify_binary_op(_stream.next().type);
             expr = make_binary_expr(
@@ -236,14 +235,14 @@ namespace arc
         return expr;
     }
 
-    // lhs << rhs
-    // lhs >> rhs
+    // lhs + rhs
+    // lhs - rhs
     std::shared_ptr<expr> parser::parse_expr5()
     {
         auto expr = parse_expr4();
         while(_stream.next_is_one_of({
-            token_type::dbl_less,
-            token_type::dbl_grtr
+            token_type::plus,
+            token_type::minus
         })) {
             auto op = classify_binary_op(_stream.next().type);
             expr = make_binary_expr(
@@ -255,18 +254,14 @@ namespace arc
         return expr;
     }
 
-    // lhs < rhs
-    // lhs <= rhs
-    // lhs > rhs
-    // lhs >= rhs
+    // lhs << rhs
+    // lhs >> rhs
     std::shared_ptr<expr> parser::parse_expr6()
     {
         auto expr = parse_expr5();
         while(_stream.next_is_one_of({
-            token_type::less,
-            token_type::less_eq,
-            token_type::grtr,
-            token_type::grtr_eq
+            token_type::dbl_less,
+            token_type::dbl_grtr
         })) {
             auto op = classify_binary_op(_stream.next().type);
             expr = make_binary_expr(
@@ -278,14 +273,18 @@ namespace arc
         return expr;
     }
 
-    // lhs == rhs
-    // lhs != rhs
+    // lhs < rhs
+    // lhs <= rhs
+    // lhs > rhs
+    // lhs >= rhs
     std::shared_ptr<expr> parser::parse_expr7()
     {
         auto expr = parse_expr6();
         while(_stream.next_is_one_of({
-            token_type::dbl_eq,
-            token_type::bang_eq
+            token_type::less,
+            token_type::less_eq,
+            token_type::grtr,
+            token_type::grtr_eq
         })) {
             auto op = classify_binary_op(_stream.next().type);
             expr = make_binary_expr(
@@ -297,12 +296,14 @@ namespace arc
         return expr;
     }
 
-    // lhs & rhs
+    // lhs == rhs
+    // lhs != rhs
     std::shared_ptr<expr> parser::parse_expr8()
     {
         auto expr = parse_expr7();
         while(_stream.next_is_one_of({
-            token_type::amp
+            token_type::dbl_eq,
+            token_type::bang_eq
         })) {
             auto op = classify_binary_op(_stream.next().type);
             expr = make_binary_expr(
@@ -314,12 +315,12 @@ namespace arc
         return expr;
     }
 
-    // lhs ^ rhs
+    // lhs & rhs
     std::shared_ptr<expr> parser::parse_expr9()
     {
         auto expr = parse_expr8();
         while(_stream.next_is_one_of({
-            token_type::caret
+            token_type::amp
         })) {
             auto op = classify_binary_op(_stream.next().type);
             expr = make_binary_expr(
@@ -331,12 +332,12 @@ namespace arc
         return expr;
     }
 
-    // lhs | rhs
+    // lhs ^ rhs
     std::shared_ptr<expr> parser::parse_expr10()
     {
         auto expr = parse_expr9();
         while(_stream.next_is_one_of({
-            token_type::pipe
+            token_type::caret
         })) {
             auto op = classify_binary_op(_stream.next().type);
             expr = make_binary_expr(
@@ -348,12 +349,12 @@ namespace arc
         return expr;
     }
 
-    // lhs && rhs
+    // lhs | rhs
     std::shared_ptr<expr> parser::parse_expr11()
     {
         auto expr = parse_expr10();
         while(_stream.next_is_one_of({
-            token_type::dbl_amp
+            token_type::pipe
         })) {
             auto op = classify_binary_op(_stream.next().type);
             expr = make_binary_expr(
@@ -365,10 +366,27 @@ namespace arc
         return expr;
     }
 
-    // lhs || rhs
+    // lhs && rhs
     std::shared_ptr<expr> parser::parse_expr12()
     {
         auto expr = parse_expr11();
+        while(_stream.next_is_one_of({
+            token_type::dbl_amp
+        })) {
+            auto op = classify_binary_op(_stream.next().type);
+            expr = make_binary_expr(
+                op,
+                expr,
+                parse_expr11()
+            );
+        }
+        return expr;
+    }
+
+    // lhs || rhs
+    std::shared_ptr<expr> parser::parse_expr13()
+    {
+        auto expr = parse_expr12();
         while(_stream.next_is_one_of({
             token_type::dbl_pipe
         })) {
@@ -376,7 +394,7 @@ namespace arc
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr11()
+                parse_expr12()
             );
         }
         return expr;
@@ -393,9 +411,9 @@ namespace arc
     // lhs &= rhs
     // lhs ^= rhs
     // lhs |= rhs
-    std::shared_ptr<expr> parser::parse_expr13()
+    std::shared_ptr<expr> parser::parse_expr14()
     {
-        auto expr = parse_expr12();
+        auto expr = parse_expr13();
         if(_stream.next_is_one_of({
             token_type::eq,
             token_type::plus_eq,
@@ -413,7 +431,7 @@ namespace arc
             return make_binary_expr(
                 op,
                 expr,
-                parse_expr13()
+                parse_expr14()
             );
         }
         return expr;
@@ -421,7 +439,7 @@ namespace arc
 
     std::shared_ptr<expr> parser::parse_expr()
     {
-        return parse_expr13();
+        return parse_expr14();
     }
 
     std::shared_ptr<expr> parser::parse()

@@ -107,6 +107,35 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 
         REQUIRE(expr_equals(expr, expected));
     }
+
+    SECTION("casting") {
+        arc::source_file input("123 == ~my_data.field++ as u32 as u8", true);
+        auto tokens = arc::lexer(input).lex();
+        auto expr = arc::parser(tokens, input).parse_expr();
+
+        auto expected = arc::make_binary_expr(
+            arc::binary_op::equality,
+            arc::make_integer_expr(123),
+            arc::make_cast_expr(
+                arc::make_cast_expr(
+                    arc::make_unary_expr(
+                        arc::unary_op::bitwise_not,
+                        arc::make_unary_expr(
+                            arc::unary_op::postfix_add,
+                            arc::make_access_expr(
+                                arc::make_name_expr("my_data"),
+                                "field"
+                            )
+                        )
+                    ),
+                    arc::make_name_typespec("u32")
+                ),
+                arc::make_name_typespec("u8")
+            )
+        );
+
+        REQUIRE(expr_equals(expr, expected));
+    }
 }
 
 TEST_CASE("type parsing completes or fails properly", "[parser]")
