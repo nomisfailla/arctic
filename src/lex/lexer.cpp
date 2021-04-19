@@ -190,6 +190,7 @@ namespace arc
                 if(ident == "import"   ) { emit(token_type::import,     "import"   ); continue; }
                 if(ident == "namespace") { emit(token_type::namespace_, "namespace"); continue; }
                 if(ident == "alias"    ) { emit(token_type::alias,      "alias"    ); continue; }
+                if(ident == "struct"   ) { emit(token_type::struct_,    "struct"   ); continue; }
                 if(ident == "true"     ) { emit(token_type::boolean,    true       ); continue; }
                 if(ident == "false"    ) { emit(token_type::boolean,    false      ); continue; }
 

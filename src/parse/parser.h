@@ -99,6 +99,8 @@ namespace arc
 
         std::shared_ptr<stmt> parse_stmt();
         std::vector<std::shared_ptr<stmt>> parse_stmt_block();
+
+        std::shared_ptr<decl> parse_decl();
     private:
         line_exception parse_error(const std::string& msg);
 

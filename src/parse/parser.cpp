@@ -585,4 +585,67 @@ namespace arc
         _stream.expect(token_type::r_curly, [&]() { throw parse_error("expected '}'"); });
         return block;
     }
+
+    std::shared_ptr<decl> parser::parse_decl()
+    {
+        auto token = _stream.expect_one_of({
+            token_type::import,
+            token_type::namespace_,
+            token_type::func,
+            token_type::struct_,
+            token_type::alias
+        }, [&]() { throw parse_error("expected a declaration"); });
+
+        switch(token.type)
+        {
+        case token_type::import: {
+            auto path = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected an import name"); });
+            _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
+            return make_import_decl(path.val_string());
+        } break;
+        case token_type::namespace_: {
+            auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a namespace name"); });
+            _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
+            return make_namespace_decl(name.val_string());
+        } break;
+        case token_type::func: {
+            auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a function name"); });
+
+            auto parse_named_arg = [&]() {
+                auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a variable name"); });
+                _stream.expect(token_type::colon, [&]() { throw parse_error("expected ':'"); });
+                auto type = parse_typespec();
+                return func_arg(name.val_string(), type);
+            };
+
+            std::vector<func_arg> args;
+            _stream.expect(token_type::l_paren, [&]() { throw parse_error("expected '('"); });
+            if(!_stream.next_is(token_type::r_paren))
+            {
+                args.push_back(parse_named_arg());
+                while(_stream.next_is(token_type::comma))
+                {
+                    _stream.next();
+                    args.push_back(parse_named_arg());
+                }
+            }
+            _stream.expect(token_type::r_paren, [&]() { throw parse_error("expected ')'"); });
+            _stream.expect(token_type::colon, [&]() { throw parse_error("expected ':'"); });
+            auto ret_type = parse_typespec();
+            auto body = parse_stmt_block();
+
+            return make_func_decl(name.val_string(), args, ret_type, body);
+        } break;
+        case token_type::struct_: {
+
+        } break;
+        case token_type::alias: {
+            auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a type name"); });
+            _stream.expect(token_type::eq, [&]() { throw parse_error("expected '='"); });
+            auto type = parse_typespec();
+            _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
+            return make_alias_decl(name.val_string(), type);
+        } break;
+        }
+    }
 }

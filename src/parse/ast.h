@@ -598,7 +598,18 @@ namespace arc
 
 	struct decl : public ast_node
 	{
+		bool operator==(const decl& rhs)
+		{
+			if(typeid(*this) != typeid(rhs)) { return false; }
+			return equals(rhs);
+		}
 
+		bool operator!=(const decl& rhs)
+		{
+			return !(*this == rhs);
+		}
+
+		virtual bool equals(const decl& rhs) const = 0;
 	};
 
 	struct decl_import : public decl
@@ -608,6 +619,12 @@ namespace arc
 		decl_import(const std::string& path)
 			: path(path)
 		{
+		}
+
+		bool equals(const decl& rhs) const
+		{
+			const decl_import& r = dynamic_cast<const decl_import&>(rhs);
+			return this->path == r.path;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -622,6 +639,12 @@ namespace arc
 		{
 		}
 
+		bool equals(const decl& rhs) const
+		{
+			const decl_namespace& r = dynamic_cast<const decl_namespace&>(rhs);
+			return this->name == r.name;
+		}
+
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
@@ -633,6 +656,11 @@ namespace arc
 		func_arg(const std::string& name, const std::shared_ptr<typespec>& type)
 			: name(name), type(type)
 		{
+		}
+
+		bool equals(const func_arg& rhs) const
+		{
+			return this->name == rhs.name && *this->type == *rhs.type;
 		}
 	};
 
@@ -646,6 +674,29 @@ namespace arc
 		decl_func(const std::string& name, const std::vector<func_arg>& arguments, const std::shared_ptr<typespec>& ret_type, const std::vector<std::shared_ptr<stmt>>& body)
 			: name(name), arguments(arguments), ret_type(ret_type), body(body)
 		{
+		}
+
+		bool equals(const decl& rhs) const
+		{
+			const decl_func& r = dynamic_cast<const decl_func&>(rhs);
+
+			if(this->name != r.name) { return false; }
+		
+			if(this->arguments.size() != r.arguments.size()) { return false; }
+
+			if(this->body.size() != r.body.size()) { return false; }
+
+			for(int i = 0; i < this->arguments.size(); i++)
+			{
+				if(!this->arguments[i].equals(r.arguments[i])) { return false; }
+			}
+			
+			for(int i = 0; i < this->body.size(); i++)
+			{
+				if(*this->body[i] != *r.body[i]) { return false; }
+			}
+
+			return true;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -673,6 +724,11 @@ namespace arc
 		{
 		}
 
+		bool equals(const decl& rhs) const
+		{
+			return true;
+		}
+
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
@@ -684,6 +740,12 @@ namespace arc
 		decl_alias(const std::string& name, const std::shared_ptr<typespec>& type)
 			: name(name), type(type)
 		{
+		}
+
+		bool equals(const decl& rhs) const
+		{
+			const decl_alias& r = dynamic_cast<const decl_alias&>(rhs);
+			return this->name == r.name && *this->type == *r.type;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }

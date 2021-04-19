@@ -19,6 +19,11 @@ namespace
     {
         return *lhs == *rhs;
     }
+
+    bool decl_equals(const std::shared_ptr<arc::decl>& lhs, const std::shared_ptr<arc::decl>& rhs)
+    {
+        return *lhs == *rhs;
+    }
 }
 
 TEST_CASE("expression parsing completes or fails properly", "[parser]")
@@ -308,5 +313,80 @@ TEST_CASE("statement parsing produces correct ast", "[parser]")
         });
 
         REQUIRE(stmt_equals(stmt, expected));
+    }
+}
+
+TEST_CASE("decl parsing produces correct ast", "[parser]")
+{
+    SECTION("import") {
+        arc::source_file input("import std;", true);
+        auto tokens = arc::lexer(input).lex();
+        auto decl = arc::parser(tokens, input).parse_decl();
+
+        auto expected = arc::make_import_decl("std");
+
+        REQUIRE(decl_equals(decl, expected));
+    }
+    
+    SECTION("namespace") {
+        arc::source_file input("namespace std;", true);
+        auto tokens = arc::lexer(input).lex();
+        auto decl = arc::parser(tokens, input).parse_decl();
+
+        auto expected = arc::make_namespace_decl("std");
+
+        REQUIRE(decl_equals(decl, expected));
+    }
+
+    SECTION("alias") {
+        arc::source_file input("alias my_type = *u32;", true);
+        auto tokens = arc::lexer(input).lex();
+        auto decl = arc::parser(tokens, input).parse_decl();
+
+        auto expected = arc::make_alias_decl(
+            "my_type",
+            arc::make_pointer_typespec(
+                arc::make_name_typespec("u32")
+            )
+        );
+
+        REQUIRE(decl_equals(decl, expected));
+    }
+
+    SECTION("func") {
+        arc::source_file input(R"(
+            func main(argc: u32, argv: **u8) : u32 {
+                return argv[argc - 1];
+            }
+        )", true);
+        auto tokens = arc::lexer(input).lex();
+        auto decl = arc::parser(tokens, input).parse_decl();
+
+        auto expected = arc::make_func_decl(
+            "main",
+            {
+                arc::func_arg("argc", arc::make_name_typespec("u32")),
+                arc::func_arg("argv", arc::make_pointer_typespec(
+                    arc::make_pointer_typespec(
+                        arc::make_name_typespec("u8")
+                    )
+                ))
+            },
+            arc::make_name_typespec("u32"),
+            {
+                arc::make_return_stmt(
+                    arc::make_index_expr(
+                        arc::make_name_expr("argv"),
+                        arc::make_binary_expr(
+                            arc::binary_op::sub,
+                            arc::make_name_expr("argc"),
+                            arc::make_integer_expr(1)
+                        )
+                    )
+                )
+            }
+        );
+
+        REQUIRE(decl_equals(decl, expected));
     }
 }

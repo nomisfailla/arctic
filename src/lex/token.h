@@ -20,6 +20,7 @@ namespace arc
         import,      // import
         namespace_,  // namespace
         alias,       // alias
+        struct_,     // struct
 
         // literals
         boolean,     // true/false
