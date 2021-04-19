@@ -12,6 +12,8 @@ namespace arc
         func,        // func
         return_,     // return
         if_,         // if
+        elif,        // elif
+        else_,       // else
         as,          // as
         let,         // let
         const_,      // const

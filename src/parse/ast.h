@@ -24,6 +24,7 @@ namespace arc
 	struct stmt_if;
 
 	struct expr_integer;
+	struct expr_boolean;
 	struct expr_name;
 	struct expr_binary;
 	struct expr_unary;
@@ -51,6 +52,7 @@ namespace arc
 		virtual void visit(const stmt_if&) {}
 
 		virtual void visit(const expr_integer&) {}
+		virtual void visit(const expr_boolean&) {}
 		virtual void visit(const expr_name&) {}
 		virtual void visit(const expr_binary&) {}
 		virtual void visit(const expr_unary&) {}
@@ -176,6 +178,24 @@ namespace arc
 		bool equals(const expr& rhs) const
 		{
 			const expr_integer& r = dynamic_cast<const expr_integer&>(rhs);
+			return this->value == r.value;
+		}
+
+		void accept(ast_visitor& v) const { v.visit(*this); }
+	};
+
+	struct expr_boolean : public expr
+	{
+		const bool value;
+
+		expr_boolean(bool value)
+			: value(value)
+		{
+		}
+		
+		bool equals(const expr& rhs) const
+		{
+			const expr_boolean& r = dynamic_cast<const expr_boolean&>(rhs);
 			return this->value == r.value;
 		}
 
@@ -377,7 +397,18 @@ namespace arc
 
 	struct stmt : public ast_node
 	{
+		bool operator==(const stmt& rhs)
+		{
+			if(typeid(*this) != typeid(rhs)) { return false; }
+			return equals(rhs);
+		}
 
+		bool operator!=(const stmt& rhs)
+		{
+			return !(*this == rhs);
+		}
+
+		virtual bool equals(const stmt& rhs) const = 0;
 	};
 
 	struct stmt_expr : public stmt
@@ -387,6 +418,12 @@ namespace arc
 		stmt_expr(const std::shared_ptr<expr>& expression)
 			: expression(expression)
 		{
+		}
+
+		bool equals(const stmt& rhs) const
+		{
+			const stmt_expr& r = dynamic_cast<const stmt_expr&>(rhs);
+			return *this->expression == *r.expression;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -403,6 +440,33 @@ namespace arc
 		{
 		}
 
+		bool equals(const stmt& rhs) const
+		{
+			const stmt_let& r = dynamic_cast<const stmt_let&>(rhs);
+
+			if(this->name != r.name) { return false; }
+
+			if(this->type != nullptr && r.type != nullptr)
+			{
+				if(*this->type != *r.type) { return false; }
+			}
+			else
+			{
+				if(this->type != r.type) { return false; }
+			}
+
+			if(this->initializer != nullptr && r.initializer != nullptr)
+			{
+				if(*this->initializer != *r.initializer) { return false; }
+			}
+			else
+			{
+				if(this->initializer != r.initializer) { return false; }
+			}
+
+			return true;
+		}
+
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
@@ -417,6 +481,33 @@ namespace arc
 		{
 		}
 
+		bool equals(const stmt& rhs) const
+		{
+			const stmt_const& r = dynamic_cast<const stmt_const&>(rhs);
+			
+			if(this->name != r.name) { return false; }
+
+			if(this->type != nullptr && r.type != nullptr)
+			{
+				if(*this->type != *r.type) { return false; }
+			}
+			else
+			{
+				if(this->type != r.type) { return false; }
+			}
+
+			if(this->initializer != nullptr && r.initializer != nullptr)
+			{
+				if(*this->initializer != *r.initializer) { return false; }
+			}
+			else
+			{
+				if(this->initializer != r.initializer) { return false; }
+			}
+
+			return true;
+		}
+
 		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
@@ -427,6 +518,22 @@ namespace arc
 		stmt_return(const std::shared_ptr<expr>& expression)
 			: expression(expression)
 		{
+		}
+
+		bool equals(const stmt& rhs) const
+		{
+			const stmt_return& r = dynamic_cast<const stmt_return&>(rhs);
+
+			if(this->expression != nullptr && r.expression != nullptr)
+			{
+				if(*this->expression != *r.expression) { return false; }
+			}
+			else
+			{
+				if(this->expression != r.expression) { return false; }
+			}
+
+			return true;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -441,16 +548,45 @@ namespace arc
 			: condition(condition), body(body)
 		{
 		}
+
+		bool equals(const if_branch& rhs) const
+		{
+			if(*this->condition != *rhs.condition) { return false; }
+
+			if(this->body.size() != rhs.body.size()) { return false; }
+
+			for(int i = 0; i < this->body.size(); i++)
+			{
+				if(*this->body[i] != *rhs.body[i]) { return false; }
+			}
+
+			return true;
+		}
 	};
 
 	struct stmt_if : public stmt
 	{
 		const std::vector<if_branch> if_branches;
-		const if_branch else_branch;
+		const std::vector<std::shared_ptr<stmt>> else_branch;
 
-		stmt_if(const std::vector<if_branch>& if_branches, const if_branch& else_branch)
+		stmt_if(const std::vector<if_branch>& if_branches, const std::vector<std::shared_ptr<stmt>>& else_branch)
 			: if_branches(if_branches), else_branch(else_branch)
 		{
+		}
+		
+		bool equals(const stmt& rhs) const
+		{
+			const stmt_if& r = dynamic_cast<const stmt_if&>(rhs);
+
+			if(this->if_branches.size() != r.if_branches.size()) { return false; }
+			if(this->else_branch.size() != r.else_branch.size()) { return false; }
+
+			for(int i = 0; i < if_branches.size(); i++)
+			{
+				if(!this->if_branches[i].equals(r.if_branches[i])) { return false; }
+			}
+
+			return true;
 		}
 
 		void accept(ast_visitor& v) const { v.visit(*this); }
@@ -562,6 +698,11 @@ namespace arc
 		return std::shared_ptr<expr_integer>(new expr_integer(value));
 	}
 
+	static auto inline make_boolean_expr(bool value)
+	{
+		return std::shared_ptr<expr_boolean>(new expr_boolean(value));
+	}
+
 	static auto inline make_name_expr(const std::string& name)
 	{
 		return std::shared_ptr<expr_name>(new expr_name(name));
@@ -632,7 +773,7 @@ namespace arc
 		return std::shared_ptr<stmt_return>(new stmt_return(ret_expr));
 	}
 
-	static auto inline make_if_stmt(const std::vector<if_branch>& if_branches, const if_branch& else_branch)
+	static auto inline make_if_stmt(const std::vector<if_branch>& if_branches, const std::vector<std::shared_ptr<stmt>>& else_branch)
 	{
 		return std::shared_ptr<stmt_if>(new stmt_if(if_branches, else_branch));
 	}

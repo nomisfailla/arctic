@@ -182,6 +182,8 @@ namespace arc
                 if(ident == "func"     ) { emit(token_type::func,       "func"     ); continue; }
                 if(ident == "return"   ) { emit(token_type::return_,    "return"   ); continue; }
                 if(ident == "if"       ) { emit(token_type::if_,        "if"       ); continue; }
+                if(ident == "elif"     ) { emit(token_type::elif,       "elif"     ); continue; }
+                if(ident == "else"     ) { emit(token_type::else_,      "else"     ); continue; }
                 if(ident == "as"       ) { emit(token_type::as,         "as"       ); continue; }
                 if(ident == "let"      ) { emit(token_type::let,        "let"      ); continue; }
                 if(ident == "const"    ) { emit(token_type::const_,     "const"    ); continue; }

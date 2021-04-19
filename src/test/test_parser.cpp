@@ -14,6 +14,11 @@ namespace
     {
         return *lhs == *rhs;
     }
+    
+    bool stmt_equals(const std::shared_ptr<arc::stmt>& lhs, const std::shared_ptr<arc::stmt>& rhs)
+    {
+        return *lhs == *rhs;
+    }
 }
 
 TEST_CASE("expression parsing completes or fails properly", "[parser]")
@@ -136,6 +141,20 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 
         REQUIRE(expr_equals(expr, expected));
     }
+
+    SECTION("boolean literals") {
+        arc::source_file input("true == false", true);
+        auto tokens = arc::lexer(input).lex();
+        auto expr = arc::parser(tokens, input).parse_expr();
+
+        auto expected = arc::make_binary_expr(
+            arc::binary_op::equality,
+            arc::make_boolean_expr(true),
+            arc::make_boolean_expr(false)
+        );
+
+        REQUIRE(expr_equals(expr, expected));
+    }
 }
 
 TEST_CASE("type parsing completes or fails properly", "[parser]")
@@ -218,5 +237,76 @@ TEST_CASE("type parsing produces correct ast", "[parser]")
         {
             REQUIRE(typespec_equals(parser.parse_typespec(), expected));
         }
+    }
+}
+
+TEST_CASE("statement parsing produces correct ast", "[parser]")
+{
+    SECTION("complex if statement") {
+        arc::source_file input(R"(
+            if 1 == 1 {
+                1 + 1;
+            } elif 2 == 2 {
+                let a = 2;
+                let b: u32 = 2;
+                let c: u32;
+            } elif true {
+                const a = 2;
+                const b: u32 = 2;
+                const c: u32;
+            } else {
+                return true;
+            }
+        )", true);
+
+        auto tokens = arc::lexer(input).lex();
+        auto parser = arc::parser(tokens, input);
+
+        auto stmt = parser.parse_stmt();
+
+        auto expected = arc::make_if_stmt({
+            arc::if_branch(
+                arc::make_binary_expr(
+                    arc::binary_op::equality,
+                    arc::make_integer_expr(1),
+                    arc::make_integer_expr(1)
+                ),
+                {
+                    arc::make_expr_stmt(
+                        arc::make_binary_expr(
+                            arc::binary_op::add,
+                            arc::make_integer_expr(1),
+                            arc::make_integer_expr(1)
+                        )
+                    )
+                }
+            ),
+            arc::if_branch(
+                arc::make_binary_expr(
+                    arc::binary_op::equality,
+                    arc::make_integer_expr(2),
+                    arc::make_integer_expr(2)
+                ),
+                {
+                    arc::make_let_stmt("a", nullptr, arc::make_integer_expr(2)),
+                    arc::make_let_stmt("b", arc::make_name_typespec("u32"), arc::make_integer_expr(2)),
+                    arc::make_let_stmt("c", arc::make_name_typespec("u32"), nullptr)
+                }
+            ),
+            arc::if_branch(
+                arc::make_boolean_expr(true),
+                {
+                    arc::make_const_stmt("a", nullptr, arc::make_integer_expr(2)),
+                    arc::make_const_stmt("b", arc::make_name_typespec("u32"), arc::make_integer_expr(2)),
+                    arc::make_const_stmt("c", arc::make_name_typespec("u32"), nullptr)
+                }
+            )
+        }, {
+            arc::make_return_stmt(
+                arc::make_boolean_expr(true)
+            )
+        });
+
+        REQUIRE(stmt_equals(stmt, expected));
     }
 }
