@@ -122,6 +122,15 @@ namespace arc
         std::shared_ptr<expr> parse_expr13();
         std::shared_ptr<expr> parse_expr14();
 
-        std::shared_ptr<decl_func> parse_func();
+        std::shared_ptr<stmt_let> parse_stmt_let();
+        std::shared_ptr<stmt_const> parse_stmt_const();
+        std::shared_ptr<stmt_return> parse_stmt_return();
+        std::shared_ptr<stmt_if> parse_stmt_if();
+
+        std::shared_ptr<decl_import> parse_decl_import();
+        std::shared_ptr<decl_namespace> parse_decl_namespace();
+        std::shared_ptr<decl_func> parse_decl_func();
+        std::shared_ptr<decl_struct> parse_decl_struct();
+        std::shared_ptr<decl_alias> parse_decl_alias();
     };
 }
