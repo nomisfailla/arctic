@@ -442,11 +442,6 @@ namespace arc
         return parse_expr14();
     }
 
-    std::shared_ptr<expr> parser::parse()
-    {
-        return parse_expr();
-    }
-
     std::shared_ptr<typespec> parser::parse_typespec()
     {
         auto token = _stream.expect_one_of({
@@ -681,5 +676,16 @@ namespace arc
             return make_alias_decl(name.val_string(), type);
         } break;
         }
+    }
+
+    
+    std::vector<std::shared_ptr<decl>> parser::parse_module()
+    {
+        std::vector<std::shared_ptr<decl>> decls;
+        while(!_stream.next_is(token_type::eof))
+        {
+            decls.push_back(parse_decl());
+        }
+        return decls;
     }
 }
