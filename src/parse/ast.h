@@ -705,12 +705,16 @@ namespace arc
 	struct struct_field
 	{
 		const std::string name;
-		const bool is_const;
 		const std::shared_ptr<typespec> type;
 
-		struct_field(const std::string& name, const std::shared_ptr<typespec>& type, bool is_const)
-			: name(name), type(type), is_const(is_const)
+		struct_field(const std::string& name, const std::shared_ptr<typespec>& type)
+			: name(name), type(type)
 		{
+		}
+
+		bool equals(const struct_field& rhs) const
+		{
+			return this->name == rhs.name && *this->type == *rhs.type;
 		}
 	};
 
@@ -718,14 +722,33 @@ namespace arc
 	{
 		const std::string name;
 		const std::vector<struct_field> fields;
+		const std::vector<std::shared_ptr<decl_func>> functions;
 
-		decl_struct(const std::string& name, const std::vector<struct_field>& fields)
-			: name(name), fields(fields)
+		decl_struct(const std::string& name, const std::vector<struct_field>& fields, const std::vector<std::shared_ptr<decl_func>>& functions)
+			: name(name), fields(fields), functions(functions)
 		{
 		}
 
 		bool equals(const decl& rhs) const
 		{
+			const decl_struct& r = dynamic_cast<const decl_struct&>(rhs);
+
+			if(this->name != r.name) { return false; }
+
+			if(this->fields.size() != r.fields.size()) { return false; }
+
+			if(this->functions.size() != r.functions.size()) { return false; }
+
+			for(int i = 0; i < this->fields.size(); i++)
+			{
+				if(!this->fields[i].equals(r.fields[i])) { return false; }
+			}
+			
+			for(int i = 0; i < this->functions.size(); i++)
+			{
+				if(*this->functions[i] != *r.functions[i]) { return false; }
+			}
+
 			return true;
 		}
 
@@ -855,9 +878,9 @@ namespace arc
 		return std::shared_ptr<decl_func>(new decl_func(name, arguments, ret_type, body));
 	}
 	
-	static auto inline make_struct_decl(const std::string name, const std::vector<struct_field>& fields)
+	static auto inline make_struct_decl(const std::string name, const std::vector<struct_field>& fields, const std::vector<std::shared_ptr<decl_func>>& functions)
 	{
-		return std::shared_ptr<decl_struct>(new decl_struct(name, fields));
+		return std::shared_ptr<decl_struct>(new decl_struct(name, fields, functions));
 	}
 
 	static auto inline make_alias_decl(const std::string& name, const std::shared_ptr<typespec>& type)

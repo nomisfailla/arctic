@@ -389,4 +389,40 @@ TEST_CASE("decl parsing produces correct ast", "[parser]")
 
         REQUIRE(decl_equals(decl, expected));
     }
+
+    SECTION("struct") {
+        arc::source_file input(R"(
+            struct some_data {
+                my_field: u32;
+                a_pointer: *bool;
+
+                func member_function() : bool {
+                    return true;
+                }
+            }
+        )", true);
+        auto tokens = arc::lexer(input).lex();
+        auto decl = arc::parser(tokens, input).parse_decl();
+
+        auto expected = arc::make_struct_decl(
+            "some_data",
+            {
+                arc::struct_field("my_field", arc::make_name_typespec("u32")),
+                arc::struct_field("a_pointer", arc::make_pointer_typespec(arc::make_name_typespec("bool"))),
+            },
+            {
+                arc::make_func_decl(
+                    "member_function",
+                    {
+                    },
+                    arc::make_name_typespec("bool"),
+                    {
+                        arc::make_return_stmt(arc::make_boolean_expr(true))
+                    }
+                )
+            }
+        );
+        
+        REQUIRE(decl_equals(decl, expected));
+    }
 }
