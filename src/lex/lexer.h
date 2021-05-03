@@ -58,15 +58,33 @@ namespace arc
         double val_float;
     };
 
+    struct lexer_result
+    {
+        const std::vector<token> tokens;
+        const std::vector<line_exception> errors;
+
+        lexer_result(const std::vector<token>& tokens, const std::vector<line_exception> errors)
+            : tokens(tokens), errors(errors)
+        {
+        }
+
+        bool succeeded() const
+        {
+            return errors.size() == 0;
+        }
+    };
+
     class lexer
     {
     private:
         const source_file& _source;
         character_stream _stream;
+
+        std::vector<line_exception> _errors;
     public:
         lexer(const source_file& source);
 
-        std::vector<token> lex();
+        lexer_result lex();
     private:
         std::string parse_identifier();
         uint64_t parse_number(uint32_t base, std::function<bool(char)> predicate);

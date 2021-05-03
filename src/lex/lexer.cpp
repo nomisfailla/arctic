@@ -80,7 +80,8 @@ namespace arc
     {
         if(!_stream.has_next() || !predicate(_stream.peek()))
         {
-            throw line_exception("malformed integer literal", _source, _stream.position());
+            _errors.push_back(line_exception("malformed integer literal", _source, _stream.position()));
+            return 0;
         }
 
         uint64_t val = 0;
@@ -158,7 +159,7 @@ namespace arc
         };
     }
 
-    std::vector<token> lexer::lex()
+    lexer_result lexer::lex()
     {
         std::vector<token> tokens;
 
@@ -322,11 +323,12 @@ namespace arc
             if(quad(">=>=", token_type::grtr, token_type::grtr_eq, token_type::dbl_grtr, token_type::dbl_grtr_eq)) { continue; }
             if(quad("<=<=", token_type::less, token_type::less_eq, token_type::dbl_less, token_type::dbl_less_eq)) { continue; }
             
-            throw line_exception("unexpected character", _source, cur_pos);
+            _errors.push_back(line_exception("unexpected character", _source, cur_pos));
+            _stream.next();
         }
 
         tokens.emplace_back(token_type::eof, "eof", _stream.position());
 
-        return tokens;
+        return lexer_result(tokens, _errors);
     }
 }

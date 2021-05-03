@@ -30,17 +30,17 @@ TEST_CASE("expression parsing completes or fails properly", "[parser]")
 {
     SECTION("basic pass case") {
         arc::source_file input("(1 + 2) + (3 - 4) + (5 * 6) + (7 / 8)", true);
-        REQUIRE_NOTHROW(arc::parser(arc::lexer(input).lex(), input).parse_expr());
+        REQUIRE_NOTHROW(arc::parser(arc::lexer(input).lex().tokens, input).parse_expr());
     }
     
     SECTION("expected expression fail") {
         arc::source_file input("()", true);
-        REQUIRE_THROWS(arc::parser(arc::lexer(input).lex(), input).parse_expr());
+        REQUIRE_THROWS(arc::parser(arc::lexer(input).lex().tokens, input).parse_expr());
     }
     
     SECTION("mismatched parenthesis fail") {
         arc::source_file input("1 + ((2)", true);
-        REQUIRE_THROWS(arc::parser(arc::lexer(input).lex(), input).parse_expr());
+        REQUIRE_THROWS(arc::parser(arc::lexer(input).lex().tokens, input).parse_expr());
     }
 }
 
@@ -48,7 +48,7 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 {
     SECTION("basic expression case") {
         arc::source_file input("1 + 2", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto expr = arc::parser(tokens, input).parse_expr();
 
         auto expected = arc::make_binary_expr(
@@ -62,7 +62,7 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 
     SECTION("complex expression case") {
         arc::source_file input("-1 + 2 / 3 == hello.world - my.array[7]", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto expr = arc::parser(tokens, input).parse_expr();
     
         auto expected = arc::make_binary_expr(
@@ -100,7 +100,7 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 
     SECTION("function call") {
         arc::source_file input("some.function(1, 2, 3)", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto expr = arc::parser(tokens, input).parse_expr();
     
         auto expected = arc::make_call_expr(
@@ -120,7 +120,7 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 
     SECTION("casting") {
         arc::source_file input("123 == ~my_data.field++ as u32 as u8", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto expr = arc::parser(tokens, input).parse_expr();
 
         auto expected = arc::make_binary_expr(
@@ -149,7 +149,7 @@ TEST_CASE("expression parsing produces correct ast", "[parser]")
 
     SECTION("boolean literals") {
         arc::source_file input("true == false", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto expr = arc::parser(tokens, input).parse_expr();
 
         auto expected = arc::make_binary_expr(
@@ -166,13 +166,13 @@ TEST_CASE("type parsing completes or fails properly", "[parser]")
 {
     SECTION("basic pass case") {
         arc::source_file input("u32 bool u32* u32** (u32, u8):bool ():u8* ():(u8):bool", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         REQUIRE_NOTHROW(arc::parser(tokens, input).parse_typespec());
     }
 
     SECTION("func type fail") {
         arc::source_file input("(u8", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         REQUIRE_THROWS(arc::parser(tokens, input).parse_typespec());
     }
 }
@@ -181,7 +181,7 @@ TEST_CASE("type parsing produces correct ast", "[parser]")
 {
     SECTION("basic types") {
         arc::source_file input("u32 ():none (u32):none (u32, bool):none", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto parser = arc::parser(tokens, input);
 
         std::vector<std::shared_ptr<arc::typespec>> expected_types = {
@@ -208,7 +208,7 @@ TEST_CASE("type parsing produces correct ast", "[parser]")
 
     SECTION("pointer types") {
         arc::source_file input("*u32 **u32 ***u32 *():*u32", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto parser = arc::parser(tokens, input);
 
         std::vector<std::shared_ptr<arc::typespec>> expected_types = {
@@ -264,7 +264,7 @@ TEST_CASE("statement parsing produces correct ast", "[parser]")
             }
         )", true);
 
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto parser = arc::parser(tokens, input);
 
         auto stmt = parser.parse_stmt();
@@ -320,7 +320,7 @@ TEST_CASE("decl parsing produces correct ast", "[parser]")
 {
     SECTION("import") {
         arc::source_file input("import std;", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto decl = arc::parser(tokens, input).parse_decl();
 
         auto expected = arc::make_import_decl("std");
@@ -330,7 +330,7 @@ TEST_CASE("decl parsing produces correct ast", "[parser]")
     
     SECTION("namespace") {
         arc::source_file input("namespace std;", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto decl = arc::parser(tokens, input).parse_decl();
 
         auto expected = arc::make_namespace_decl("std");
@@ -340,7 +340,7 @@ TEST_CASE("decl parsing produces correct ast", "[parser]")
 
     SECTION("alias") {
         arc::source_file input("alias my_type = *u32;", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto decl = arc::parser(tokens, input).parse_decl();
 
         auto expected = arc::make_alias_decl(
@@ -359,7 +359,7 @@ TEST_CASE("decl parsing produces correct ast", "[parser]")
                 return argv[argc - 1];
             }
         )", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto decl = arc::parser(tokens, input).parse_decl();
 
         auto expected = arc::make_func_decl(
@@ -401,7 +401,7 @@ TEST_CASE("decl parsing produces correct ast", "[parser]")
                 }
             }
         )", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
         auto decl = arc::parser(tokens, input).parse_decl();
 
         auto expected = arc::make_struct_decl(

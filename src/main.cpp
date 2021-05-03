@@ -138,10 +138,19 @@ static void process(const arc::source_file& input)
 		try
 		{
 			arc::lexer lexer(input);
-			auto tokens = lexer.lex();
-
-			arc::parser parser(tokens, input);
-			auto decls = parser.parse_module();
+			auto lexer_result = lexer.lex();
+			if(lexer_result.succeeded())
+			{
+				arc::parser parser(lexer_result.tokens, input);
+				auto decls = parser.parse_module();
+			}
+			else
+			{
+				for(const auto& error : lexer_result.errors)
+				{
+					std::cout << format_error(error);
+				}
+			}
 		}
 		catch(const arc::line_exception& ex)
 		{

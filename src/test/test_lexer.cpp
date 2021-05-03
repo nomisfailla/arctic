@@ -6,48 +6,46 @@ TEST_CASE("lexer completes or fails properly", "[lexer]")
 {
     SECTION("basic pass case") {
         arc::source_file input("func main(a: u32, b: u32) : none { return (a / 2) + b << 2; }", true);
-        arc::lexer lexer(input);
+        auto result = arc::lexer(input).lex();
 
-        std::vector<arc::token> tokens;
-        REQUIRE_NOTHROW(tokens = lexer.lex());
-        REQUIRE(tokens.size() == 27);
+        REQUIRE(result.succeeded());
+        REQUIRE(result.tokens.size() == 27);
     }
 
     SECTION("number literals pass case") {
         arc::source_file input("12345 0b101 0o0713 0xFFAEF 3.1415", true);
-        arc::lexer lexer(input);
+        auto result = arc::lexer(input).lex();
 
-        std::vector<arc::token> tokens;
-        REQUIRE_NOTHROW(tokens = lexer.lex());
-        REQUIRE(tokens.size() == 6);
+        REQUIRE(result.succeeded());
+        REQUIRE(result.tokens.size() == 6);
     }
 
     SECTION("unknown character fail") {
         arc::source_file input("func # 123", true);
-        arc::lexer lexer(input);
+        auto result = arc::lexer(input).lex();
 
-        REQUIRE_THROWS(lexer.lex());
+        REQUIRE(!result.succeeded());
     }
 
     SECTION("malformed binary literal fail") {
         arc::source_file input("0b2", true);
-        arc::lexer lexer(input);
+        auto result = arc::lexer(input).lex();
 
-        REQUIRE_THROWS(lexer.lex());
+        REQUIRE(!result.succeeded());
     }
 
     SECTION("malformed octal literal fail") {
         arc::source_file input("0oF", true);
-        arc::lexer lexer(input);
+        auto result = arc::lexer(input).lex();
 
-        REQUIRE_THROWS(lexer.lex());
+        REQUIRE(!result.succeeded());
     }
 
     SECTION("malformed hex literal fail") {
         arc::source_file input("0xP", true);
-        arc::lexer lexer(input);
+        auto result = arc::lexer(input).lex();
 
-        REQUIRE_THROWS(lexer.lex());
+        REQUIRE(!result.succeeded());
     }
 }
 
@@ -55,9 +53,7 @@ TEST_CASE("lexer lexes correct token types", "[lexer]")
 {
     SECTION("literal types") {
         arc::source_file input("true false 12345 0b101 0o0713 0xFFAEF 3.1415 hello", true);
-        arc::lexer lexer(input);
-
-        auto tokens = lexer.lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         auto expected_types = {
             arc::token_type::boolean,
@@ -83,9 +79,7 @@ TEST_CASE("lexer lexes correct token types", "[lexer]")
 
     SECTION("keywords") {
         arc::source_file input("func return if as", true);
-        arc::lexer lexer(input);
-
-        auto tokens = lexer.lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         auto expected_types = {
             arc::token_type::func,
@@ -107,9 +101,7 @@ TEST_CASE("lexer lexes correct token types", "[lexer]")
 
     SECTION("seperators") {
         arc::source_file input("() [] {} , : :: ; .", true);
-        arc::lexer lexer(input);
-
-        auto tokens = lexer.lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         auto expected_types = {
             arc::token_type::l_paren,
@@ -138,9 +130,7 @@ TEST_CASE("lexer lexes correct token types", "[lexer]")
 
     SECTION("operators") {
         arc::source_file input("+ += ++ - -= -- * *= / /= < <= << <<= > >= >> >>= ^ ^= | |= || & &= && ~ = == ! != % %=", true);
-        arc::lexer lexer(input);
-
-        auto tokens = lexer.lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         auto expected_types = {
             arc::token_type::plus,
@@ -191,9 +181,7 @@ TEST_CASE("lexer lexes correct token types", "[lexer]")
 
     SECTION("strange operators") {
         arc::source_file input(">>>=== ||= <<<", true);
-        arc::lexer lexer(input);
-
-        auto tokens = lexer.lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         auto expected_types = {
             arc::token_type::dbl_grtr,
@@ -221,7 +209,7 @@ TEST_CASE("lexer parses correct token values", "[lexer]")
 {
     SECTION("booleans") {
         arc::source_file input("true false", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         REQUIRE(tokens.size() == 3);
 
@@ -236,7 +224,7 @@ TEST_CASE("lexer parses correct token values", "[lexer]")
 
     SECTION("integers") {
         arc::source_file input("12345 0b1011 0o4526 0xABC2", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         REQUIRE(tokens.size() == 5);
 
@@ -259,7 +247,7 @@ TEST_CASE("lexer parses correct token values", "[lexer]")
 
     SECTION("floats") {
         arc::source_file input("3.1415926535 2.0 2.5", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         REQUIRE(tokens.size() == 4);
 
@@ -278,7 +266,7 @@ TEST_CASE("lexer parses correct token values", "[lexer]")
 
     SECTION("identifiers") {
         arc::source_file input("test.b _a12 7test", true);
-        auto tokens = arc::lexer(input).lex();
+        auto tokens = arc::lexer(input).lex().tokens;
 
         REQUIRE(tokens.size() == 7);
 
