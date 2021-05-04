@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <memory>
 
+#include "../error/exceptions.h"
 #include "../parse/ast.h"
 #include "../type/types.h"
 #include "../type/type_map.h"
@@ -48,10 +49,15 @@ namespace arc
 		lexical_scope _global_scope;
 		type_map _type_map;
 
-		std::vector<std::shared_ptr<decl>> _ast;
-	public:
-		type_checker(const std::vector<std::shared_ptr<decl>>& ast);
+		std::vector<line_exception> _errors;
 
-		void check();
+		std::vector<std::shared_ptr<decl>> _ast;
+        const source_file& _source;
+	public:
+		type_checker(const std::vector<std::shared_ptr<decl>>& ast, const source_file& source);
+
+		void add_error(const std::string& error, source_pos position);
+
+		std::vector<line_exception> check();
 	};
 }

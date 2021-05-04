@@ -146,8 +146,19 @@ static void process(const arc::source_file& input)
 				arc::parser parser(lexer_result.tokens, input);
 				auto decls = parser.parse_module();
 
-				arc::type_checker type_checker(decls);
-				type_checker.check();
+				arc::type_checker type_checker(decls, input);
+				auto type_checker_result = type_checker.check();
+				if(type_checker_result.size() == 0)
+				{
+
+				}
+				else
+				{
+					for(const auto& error : type_checker_result)
+					{
+						std::cout << format_error(error);
+					}
+				}
 			}
 			else
 			{
