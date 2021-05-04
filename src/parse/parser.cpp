@@ -87,16 +87,16 @@ namespace arc
         switch(token.type)
         {
         case token_type::boolean: {
-            return make_boolean_expr(token.val_boolean());
+            return make_boolean_expr(token.val_boolean(), token.position);
         } break;
         case token_type::integer: {
-            return make_integer_expr(token.val_integer());
+            return make_integer_expr(token.val_integer(), token.position);
         } break;
         case token_type::float_: {
-            return make_integer_expr(token.val_double());
+            return make_integer_expr(token.val_double(), token.position);
         } break;
         case token_type::identifier: {
-            return make_name_expr(token.val_string());
+            return make_name_expr(token.val_string(), token.position);
         } break;
         case token_type::l_paren: {
             auto expr = parse_expr();
@@ -127,7 +127,7 @@ namespace arc
             case token_type::l_paren: {
                 std::vector<std::shared_ptr<expr>> args;
 
-                _stream.next();
+                auto token = _stream.next();
                 if(!_stream.next_is(token_type::r_paren))
                 {
                     args.push_back(parse_expr());
@@ -139,26 +139,28 @@ namespace arc
                 }
                 _stream.expect(token_type::r_paren, [&]() { throw parse_error("expected ')'"); });
 
-                base_expr = make_call_expr(base_expr, args);
+                base_expr = make_call_expr(base_expr, args, token.position);
             } break;
             case token_type::l_square: {
-                _stream.next();
+                auto token = _stream.next();
                 auto index = parse_expr();
                 _stream.expect(token_type::r_square, [&]() { throw parse_error("expected ']'"); });
 
-                base_expr = make_index_expr(base_expr, index);
+                base_expr = make_index_expr(base_expr, index, token.position);
             } break;
             case token_type::dot: {
-                _stream.next();
-                token field = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a field name"); });
+                auto token = _stream.next();
+                auto field = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a field name"); });
 
-                base_expr = make_access_expr(base_expr, field.val_string());
+                base_expr = make_access_expr(base_expr, field.val_string(), token.position);
             } break;
             case token_type::dbl_plus: {
-                base_expr = make_unary_expr(classify_unary_op(_stream.next().type, true), base_expr);
+                auto token = _stream.next();
+                base_expr = make_unary_expr(classify_unary_op(token.type, true), base_expr, token.position);
             } break;
             case token_type::dbl_minus: {
-                base_expr = make_unary_expr(classify_unary_op(_stream.next().type, true), base_expr);
+                auto token = _stream.next();
+                base_expr = make_unary_expr(classify_unary_op(token.type, true), base_expr, token.position);
             } break;
             }
         }
@@ -186,10 +188,12 @@ namespace arc
             token_type::tilde,
             token_type::bang
         })) {
-            auto op = classify_unary_op(_stream.next().type, false);
+            auto token = _stream.next();
+            auto op = classify_unary_op(token.type, false);
             return make_unary_expr(
                 op,
-                parse_expr2()
+                parse_expr2(),
+                token.position
             );
         }
 
@@ -203,11 +207,12 @@ namespace arc
 
         while(_stream.next_is(token_type::as))
         {
-            _stream.next();
+            auto token = _stream.next();
 
             expr = make_cast_expr(
                 expr,
-                parse_typespec()
+                parse_typespec(),
+                token.position
             );
         }
 
@@ -225,11 +230,13 @@ namespace arc
             token_type::slash,
             token_type::percent
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr3()
+                parse_expr3(),
+                token.position
             );
         }
         return expr;
@@ -244,11 +251,13 @@ namespace arc
             token_type::plus,
             token_type::minus
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr4()
+                parse_expr4(),
+                token.position
             );
         }
         return expr;
@@ -263,11 +272,13 @@ namespace arc
             token_type::dbl_less,
             token_type::dbl_grtr
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr5()
+                parse_expr5(),
+                token.position
             );
         }
         return expr;
@@ -286,11 +297,13 @@ namespace arc
             token_type::grtr,
             token_type::grtr_eq
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr6()
+                parse_expr6(),
+                token.position
             );
         }
         return expr;
@@ -305,11 +318,13 @@ namespace arc
             token_type::dbl_eq,
             token_type::bang_eq
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr7()
+                parse_expr7(),
+                token.position
             );
         }
         return expr;
@@ -322,11 +337,13 @@ namespace arc
         while(_stream.next_is_one_of({
             token_type::amp
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr8()
+                parse_expr8(),
+                token.position
             );
         }
         return expr;
@@ -339,11 +356,13 @@ namespace arc
         while(_stream.next_is_one_of({
             token_type::caret
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr9()
+                parse_expr9(),
+                token.position
             );
         }
         return expr;
@@ -356,11 +375,13 @@ namespace arc
         while(_stream.next_is_one_of({
             token_type::pipe
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr10()
+                parse_expr10(),
+                token.position
             );
         }
         return expr;
@@ -373,11 +394,13 @@ namespace arc
         while(_stream.next_is_one_of({
             token_type::dbl_amp
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr11()
+                parse_expr11(),
+                token.position
             );
         }
         return expr;
@@ -390,11 +413,13 @@ namespace arc
         while(_stream.next_is_one_of({
             token_type::dbl_pipe
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             expr = make_binary_expr(
                 op,
                 expr,
-                parse_expr12()
+                parse_expr12(),
+                token.position
             );
         }
         return expr;
@@ -427,11 +452,13 @@ namespace arc
             token_type::caret_eq,
             token_type::pipe_eq
         })) {
-            auto op = classify_binary_op(_stream.next().type);
+            auto token = _stream.next();
+            auto op = classify_binary_op(token.type);
             return make_binary_expr(
                 op,
                 expr,
-                parse_expr14()
+                parse_expr14(),
+                token.position
             );
         }
         return expr;
@@ -453,7 +480,7 @@ namespace arc
         switch(token.type)
         {
         case token_type::identifier: {
-            return make_name_typespec(token.val_string());
+            return make_name_typespec(token.val_string(), token.position);
         } break;
         case token_type::l_paren: {
             // arguments
@@ -472,17 +499,17 @@ namespace arc
 
             auto return_type = parse_typespec();
 
-            return make_func_typespec(args, return_type);  
+            return make_func_typespec(args, return_type, token.position);  
         } break;
         case token_type::asterix: {
-            return make_pointer_typespec(parse_typespec());
+            return make_pointer_typespec(parse_typespec(), token.position);
         } break;
         }
     }
 
     std::shared_ptr<stmt_let> parser::parse_stmt_let()
     {
-        _stream.expect(token_type::let, [&]() { throw parse_error("expected 'let'"); });
+        auto token = _stream.expect(token_type::let, [&]() { throw parse_error("expected 'let'"); });
         auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected variable name"); });
 
         std::shared_ptr<typespec> type = nullptr;
@@ -500,12 +527,12 @@ namespace arc
         }
 
         _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
-        return make_let_stmt(name.val_string(), type, initializer);
+        return make_let_stmt(name.val_string(), type, initializer, token.position);
     }
 
     std::shared_ptr<stmt_const> parser::parse_stmt_const()
     {
-        _stream.expect(token_type::const_, [&]() { throw parse_error("expected 'const'"); });
+        auto token = _stream.expect(token_type::const_, [&]() { throw parse_error("expected 'const'"); });
         auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected variable name"); });
         
         std::shared_ptr<typespec> type = nullptr;
@@ -523,24 +550,24 @@ namespace arc
         }
 
         _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
-        return make_const_stmt(name.val_string(), type, initializer);
+        return make_const_stmt(name.val_string(), type, initializer, token.position);
     }
 
     std::shared_ptr<stmt_return> parser::parse_stmt_return()
     {
-        _stream.expect(token_type::return_, [&]() { throw parse_error("expected 'return'"); });
+        auto token = _stream.expect(token_type::return_, [&]() { throw parse_error("expected 'return'"); });
         std::shared_ptr<expr> ret_expr = nullptr;
         if(!_stream.next_is(token_type::semi_colon))
         {
             ret_expr = parse_expr();
         }
         _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
-        return make_return_stmt(ret_expr);
+        return make_return_stmt(ret_expr, token.position);
     }
 
     std::shared_ptr<stmt_if> parser::parse_stmt_if()
     {
-        _stream.expect(token_type::if_, [&]() { throw parse_error("expected 'if'"); });
+        auto token = _stream.expect(token_type::if_, [&]() { throw parse_error("expected 'if'"); });
         std::vector<if_branch> if_branches;
         auto expr = parse_expr();
         auto block = parse_stmt_block();
@@ -560,7 +587,7 @@ namespace arc
             else_branch = parse_stmt_block();
         }
 
-        return make_if_stmt(if_branches, else_branch);
+        return make_if_stmt(if_branches, else_branch, token.position);
     }
 
     std::shared_ptr<stmt> parser::parse_stmt()
@@ -589,7 +616,7 @@ namespace arc
         } else {
             auto expr = parse_expr();
             _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
-            return make_expr_stmt(expr);
+            return make_expr_stmt(expr, expr->position);
         }
     }
     
@@ -607,23 +634,23 @@ namespace arc
  
     std::shared_ptr<decl_import> parser::parse_decl_import()
     {
-        _stream.expect(token_type::import, [&]() { throw parse_error("expected 'import'"); });
+        auto token = _stream.expect(token_type::import, [&]() { throw parse_error("expected 'import'"); });
         auto path = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected an import name"); });
         _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
-        return make_import_decl(path.val_string());
+        return make_import_decl(path.val_string(), token.position);
     }
 
     std::shared_ptr<decl_namespace> parser::parse_decl_namespace()
     {
-        _stream.expect(token_type::namespace_, [&]() { throw parse_error("expected 'namespace'"); });
+        auto token = _stream.expect(token_type::namespace_, [&]() { throw parse_error("expected 'namespace'"); });
         auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a namespace name"); });
         _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
-        return make_namespace_decl(name.val_string());
+        return make_namespace_decl(name.val_string(), token.position);
     }
 
     std::shared_ptr<decl_func> parser::parse_decl_func()
     {
-        _stream.expect(token_type::func, [&]() { throw parse_error("expected 'func''"); });
+        auto token = _stream.expect(token_type::func, [&]() { throw parse_error("expected 'func''"); });
         auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a function name"); });
 
         auto parse_named_arg = [&]() {
@@ -649,12 +676,12 @@ namespace arc
         auto ret_type = parse_typespec();
         auto body = parse_stmt_block();
 
-        return make_func_decl(name.val_string(), args, ret_type, body);
+        return make_func_decl(name.val_string(), args, ret_type, body, token.position);
     }
 
     std::shared_ptr<decl_struct> parser::parse_decl_struct()
     {
-        _stream.expect(token_type::struct_, [&]() { throw parse_error("expected 'struct''"); });
+        auto token = _stream.expect(token_type::struct_, [&]() { throw parse_error("expected 'struct''"); });
         auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a struct name"); });
 
         std::vector<struct_field> fields;
@@ -688,17 +715,17 @@ namespace arc
         }
         _stream.expect(token_type::r_curly, [&]() { throw parse_error("expected '}'"); });
 
-        return make_struct_decl(name.val_string(), fields, functions);
+        return make_struct_decl(name.val_string(), fields, functions, token.position);
     }
 
     std::shared_ptr<decl_alias> parser::parse_decl_alias()
     {
-        _stream.expect(token_type::alias, [&]() { throw parse_error("expected 'alias''"); });
+        auto token = _stream.expect(token_type::alias, [&]() { throw parse_error("expected 'alias''"); });
         auto name = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected a type name"); });
         _stream.expect(token_type::eq, [&]() { throw parse_error("expected '='"); });
         auto type = parse_typespec();
         _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
-        return make_alias_decl(name.val_string(), type);
+        return make_alias_decl(name.val_string(), type, token.position);
     }
 
     std::shared_ptr<decl> parser::parse_decl()

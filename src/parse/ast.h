@@ -6,11 +6,17 @@
 #include <vector>
 #include <unordered_map>
 
+#include "../util/source_file.h"
+
 namespace arc
 {
 	//
 	// Forward Declarations
 	//
+
+	struct typespec_func;
+	struct typespec_name;
+	struct typespec_pointer;
 
 	struct decl_import;
 	struct decl_namespace;
@@ -40,6 +46,10 @@ namespace arc
 
 	struct ast_visitor
 	{
+		virtual void visit(const typespec_func&) {}
+		virtual void visit(const typespec_name&) {}
+		virtual void visit(const typespec_pointer&) {}
+
 		virtual void visit(const decl_import&) {}
 		virtual void visit(const decl_namespace&) {}
 		virtual void visit(const decl_func&) {}
@@ -65,6 +75,13 @@ namespace arc
 
 	struct ast_node
 	{
+        const source_pos position;
+
+		ast_node(source_pos position)
+			: position(position)
+		{
+		}
+
 		virtual ~ast_node() = default;
 		virtual void accept(ast_visitor&) const = 0;
 	};
@@ -73,8 +90,13 @@ namespace arc
 	// Typespecs
 	//
 
-	struct typespec
+	struct typespec : public ast_node
 	{
+		typespec(source_pos position)
+			: ast_node(position)
+		{
+		}
+
 		bool operator==(const typespec& rhs)
 		{
 			if(typeid(*this) != typeid(rhs)) { return false; }
@@ -94,8 +116,8 @@ namespace arc
 	{
 		const std::string name;
 
-		typespec_name(const std::string& name)
-			: name(name)
+		typespec_name(const std::string& name, source_pos position)
+			: name(name), typespec(position)
 		{
 		}
 
@@ -109,14 +131,16 @@ namespace arc
 		{
 			return std::hash<std::string>()(name);
 		}
+
+		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
 	struct typespec_pointer : public typespec
 	{
 		const std::shared_ptr<typespec> base;
 
-		typespec_pointer(const std::shared_ptr<typespec>& base)
-			: base(base)
+		typespec_pointer(const std::shared_ptr<typespec>& base, source_pos position)
+			: base(base), typespec(position)
 		{
 		}
 
@@ -130,6 +154,8 @@ namespace arc
 		{
 			return 217 + this->base->hash();
 		}
+
+		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
 	struct typespec_func : public typespec
@@ -137,8 +163,8 @@ namespace arc
 		const std::vector<std::shared_ptr<typespec>> argument_types;
 		const std::shared_ptr<typespec> return_type;
 
-		typespec_func(const std::vector<std::shared_ptr<typespec>>& argument_types, const std::shared_ptr<typespec>& return_type)
-			: argument_types(argument_types), return_type(return_type)
+		typespec_func(const std::vector<std::shared_ptr<typespec>>& argument_types, const std::shared_ptr<typespec>& return_type, source_pos position)
+			: argument_types(argument_types), return_type(return_type), typespec(position)
 		{
 		}
 
@@ -167,6 +193,8 @@ namespace arc
 			}
 			return h;
 		}
+
+		void accept(ast_visitor& v) const { v.visit(*this); }
 	};
 
 	//
@@ -175,6 +203,11 @@ namespace arc
 
 	struct expr : public ast_node
 	{
+		expr(source_pos position)
+			: ast_node(position)
+		{
+		}
+
 		bool operator==(const expr& rhs)
 		{
 			if(typeid(*this) != typeid(rhs)) { return false; }
@@ -193,8 +226,8 @@ namespace arc
 	{
 		const uint64_t value;
 
-		expr_integer(uint64_t value)
-			: value(value)
+		expr_integer(uint64_t value, source_pos position)
+			: value(value), expr(position)
 		{
 		}
 
@@ -211,8 +244,8 @@ namespace arc
 	{
 		const bool value;
 
-		expr_boolean(bool value)
-			: value(value)
+		expr_boolean(bool value, source_pos position)
+			: value(value), expr(position)
 		{
 		}
 		
@@ -229,8 +262,8 @@ namespace arc
 	{
 		const std::string name;
 
-		expr_name(const std::string& name)
-			: name(name)
+		expr_name(const std::string& name, source_pos position)
+			: name(name), expr(position)
 		{
 		}
 
@@ -282,8 +315,8 @@ namespace arc
 		const std::shared_ptr<expr> lhs;
 		const std::shared_ptr<expr> rhs;
 
-		expr_binary(binary_op op, const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& rhs)
-			: op(op), lhs(lhs), rhs(rhs)
+		expr_binary(binary_op op, const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& rhs, source_pos position)
+			: op(op), lhs(lhs), rhs(rhs), expr(position)
 		{
 		}
 
@@ -315,8 +348,8 @@ namespace arc
 		const unary_op op;
 		const std::shared_ptr<expr> rhs;
 
-		expr_unary(unary_op op, const std::shared_ptr<expr>& rhs)
-			: op(op), rhs(rhs)
+		expr_unary(unary_op op, const std::shared_ptr<expr>& rhs, source_pos position)
+			: op(op), rhs(rhs), expr(position)
 		{
 		}
 
@@ -334,8 +367,8 @@ namespace arc
 		const std::shared_ptr<expr> lhs;
 		const std::vector<std::shared_ptr<expr>> args;
 
-		expr_call(const std::shared_ptr<expr>& lhs, const std::vector<std::shared_ptr<expr>>& args)
-			: lhs(lhs), args(args)
+		expr_call(const std::shared_ptr<expr>& lhs, const std::vector<std::shared_ptr<expr>>& args, source_pos position)
+			: lhs(lhs), args(args), expr(position)
 		{
 		}
 
@@ -362,8 +395,8 @@ namespace arc
 		const std::shared_ptr<expr> lhs;
 		const std::shared_ptr<expr> index;
 
-		expr_index(const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& index)
-			: lhs(lhs), index(index)
+		expr_index(const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& index, source_pos position)
+			: lhs(lhs), index(index), expr(position)
 		{
 		}
 
@@ -381,8 +414,8 @@ namespace arc
 		const std::shared_ptr<expr> lhs;
 		const std::string field;
 
-		expr_access(const std::shared_ptr<expr>& lhs, const std::string& field)
-			: lhs(lhs), field(field)
+		expr_access(const std::shared_ptr<expr>& lhs, const std::string& field, source_pos position)
+			: lhs(lhs), field(field), expr(position)
 		{
 		}
 
@@ -400,8 +433,8 @@ namespace arc
 		const std::shared_ptr<expr> lhs;
 		const std::shared_ptr<typespec> to_type;
 
-		expr_cast(const std::shared_ptr<expr>& lhs, const std::shared_ptr<typespec>& to_type)
-			: lhs(lhs), to_type(to_type)
+		expr_cast(const std::shared_ptr<expr>& lhs, const std::shared_ptr<typespec>& to_type, source_pos position)
+			: lhs(lhs), to_type(to_type), expr(position)
 		{
 		}
 
@@ -420,6 +453,11 @@ namespace arc
 
 	struct stmt : public ast_node
 	{
+		stmt(source_pos position)
+			: ast_node(position)
+		{
+		}
+
 		bool operator==(const stmt& rhs)
 		{
 			if(typeid(*this) != typeid(rhs)) { return false; }
@@ -438,8 +476,8 @@ namespace arc
 	{
 		const std::shared_ptr<expr> expression;
 
-		stmt_expr(const std::shared_ptr<expr>& expression)
-			: expression(expression)
+		stmt_expr(const std::shared_ptr<expr>& expression, source_pos position)
+			: expression(expression), stmt(position)
 		{
 		}
 
@@ -458,8 +496,8 @@ namespace arc
 		const std::shared_ptr<typespec> type;
 		const std::shared_ptr<expr> initializer;
 
-		stmt_let(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer)
-			: name(name), type(type), initializer(initializer)
+		stmt_let(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer, source_pos position)
+			: name(name), type(type), initializer(initializer), stmt(position)
 		{
 		}
 
@@ -499,8 +537,8 @@ namespace arc
 		const std::shared_ptr<typespec> type;
 		const std::shared_ptr<expr> initializer;
 
-		stmt_const(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer)
-			: name(name), type(type), initializer(initializer)
+		stmt_const(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer, source_pos position)
+			: name(name), type(type), initializer(initializer), stmt(position)
 		{
 		}
 
@@ -538,8 +576,8 @@ namespace arc
 	{
 		const std::shared_ptr<expr> expression;
 
-		stmt_return(const std::shared_ptr<expr>& expression)
-			: expression(expression)
+		stmt_return(const std::shared_ptr<expr>& expression, source_pos position)
+			: expression(expression), stmt(position)
 		{
 		}
 
@@ -592,8 +630,8 @@ namespace arc
 		const std::vector<if_branch> if_branches;
 		const std::vector<std::shared_ptr<stmt>> else_branch;
 
-		stmt_if(const std::vector<if_branch>& if_branches, const std::vector<std::shared_ptr<stmt>>& else_branch)
-			: if_branches(if_branches), else_branch(else_branch)
+		stmt_if(const std::vector<if_branch>& if_branches, const std::vector<std::shared_ptr<stmt>>& else_branch, source_pos position)
+			: if_branches(if_branches), else_branch(else_branch), stmt(position)
 		{
 		}
 		
@@ -621,6 +659,11 @@ namespace arc
 
 	struct decl : public ast_node
 	{
+		decl(source_pos position)
+			: ast_node(position)
+		{
+		}
+
 		bool operator==(const decl& rhs)
 		{
 			if(typeid(*this) != typeid(rhs)) { return false; }
@@ -639,8 +682,8 @@ namespace arc
 	{
 		const std::string path;
 
-		decl_import(const std::string& path)
-			: path(path)
+		decl_import(const std::string& path, source_pos position)
+			: path(path), decl(position)
 		{
 		}
 
@@ -657,8 +700,8 @@ namespace arc
 	{
 		const std::string name;
 
-		decl_namespace(const std::string& name)
-			: name(name)
+		decl_namespace(const std::string& name, source_pos position)
+			: name(name), decl(position)
 		{
 		}
 
@@ -694,8 +737,13 @@ namespace arc
 		const std::shared_ptr<typespec> ret_type;
 		const std::vector<std::shared_ptr<stmt>> body;
 
-		decl_func(const std::string& name, const std::vector<func_arg>& arguments, const std::shared_ptr<typespec>& ret_type, const std::vector<std::shared_ptr<stmt>>& body)
-			: name(name), arguments(arguments), ret_type(ret_type), body(body)
+		decl_func(
+			const std::string& name,
+			const std::vector<func_arg>& arguments,
+			const std::shared_ptr<typespec>& ret_type,
+			const std::vector<std::shared_ptr<stmt>>& body,
+			source_pos position
+		) : name(name), arguments(arguments), ret_type(ret_type), body(body), decl(position)
 		{
 		}
 
@@ -747,8 +795,8 @@ namespace arc
 		const std::vector<struct_field> fields;
 		const std::vector<std::shared_ptr<decl_func>> functions;
 
-		decl_struct(const std::string& name, const std::vector<struct_field>& fields, const std::vector<std::shared_ptr<decl_func>>& functions)
-			: name(name), fields(fields), functions(functions)
+		decl_struct(const std::string& name, const std::vector<struct_field>& fields, const std::vector<std::shared_ptr<decl_func>>& functions, source_pos position)
+			: name(name), fields(fields), functions(functions), decl(position)
 		{
 		}
 
@@ -783,8 +831,8 @@ namespace arc
 		const std::string name;
 		const std::shared_ptr<typespec> type;
 
-		decl_alias(const std::string& name, const std::shared_ptr<typespec>& type)
-			: name(name), type(type)
+		decl_alias(const std::string& name, const std::shared_ptr<typespec>& type, source_pos position)
+			: name(name), type(type), decl(position)
 		{
 		}
 
@@ -801,113 +849,113 @@ namespace arc
 	// Utilities
 	//
 
-	static auto inline make_integer_expr(uint64_t value)
+	static auto inline make_integer_expr(uint64_t value, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_integer>(new expr_integer(value));
+		return std::shared_ptr<expr_integer>(new expr_integer(value, position));
 	}
 
-	static auto inline make_boolean_expr(bool value)
+	static auto inline make_boolean_expr(bool value, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_boolean>(new expr_boolean(value));
+		return std::shared_ptr<expr_boolean>(new expr_boolean(value, position));
 	}
 
-	static auto inline make_name_expr(const std::string& name)
+	static auto inline make_name_expr(const std::string& name, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_name>(new expr_name(name));
+		return std::shared_ptr<expr_name>(new expr_name(name, position));
 	}
 
-	static auto inline make_binary_expr(binary_op op, const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& rhs)
+	static auto inline make_binary_expr(binary_op op, const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& rhs, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_binary>(new expr_binary(op, lhs, rhs));
+		return std::shared_ptr<expr_binary>(new expr_binary(op, lhs, rhs, position));
 	}
 
-	static auto inline make_unary_expr(unary_op op, const std::shared_ptr<expr>& rhs)
+	static auto inline make_unary_expr(unary_op op, const std::shared_ptr<expr>& rhs, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_unary>(new expr_unary(op, rhs));
+		return std::shared_ptr<expr_unary>(new expr_unary(op, rhs, position));
 	}
 
-	static auto inline make_call_expr(const std::shared_ptr<expr>& lhs, const std::vector<std::shared_ptr<expr>>& args)
+	static auto inline make_call_expr(const std::shared_ptr<expr>& lhs, const std::vector<std::shared_ptr<expr>>& args, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_call>(new expr_call(lhs, args));
+		return std::shared_ptr<expr_call>(new expr_call(lhs, args, position));
 	}
 
-	static auto inline make_index_expr(const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& index)
+	static auto inline make_index_expr(const std::shared_ptr<expr>& lhs, const std::shared_ptr<expr>& index, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_index>(new expr_index(lhs, index));
+		return std::shared_ptr<expr_index>(new expr_index(lhs, index, position));
 	}
 
-	static auto inline make_access_expr(const std::shared_ptr<expr>& lhs, const std::string& field)
+	static auto inline make_access_expr(const std::shared_ptr<expr>& lhs, const std::string& field, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_access>(new expr_access(lhs, field));
+		return std::shared_ptr<expr_access>(new expr_access(lhs, field, position));
 	}
 
-	static auto make_cast_expr(const std::shared_ptr<expr>& lhs, const std::shared_ptr<typespec>& to_type)
+	static auto make_cast_expr(const std::shared_ptr<expr>& lhs, const std::shared_ptr<typespec>& to_type, source_pos position = source_pos())
 	{
-		return std::shared_ptr<expr_cast>(new expr_cast(lhs, to_type));
+		return std::shared_ptr<expr_cast>(new expr_cast(lhs, to_type, position));
 	}
 
-	static auto inline make_name_typespec(const std::string& name)
+	static auto inline make_name_typespec(const std::string& name, source_pos position = source_pos())
 	{
-		return std::shared_ptr<typespec_name>(new typespec_name(name));
+		return std::shared_ptr<typespec_name>(new typespec_name(name, position));
 	}
 
-	static auto inline make_pointer_typespec(const std::shared_ptr<typespec>& base)
+	static auto inline make_pointer_typespec(const std::shared_ptr<typespec>& base, source_pos position = source_pos())
 	{
-		return std::shared_ptr<typespec_pointer>(new typespec_pointer(base));
+		return std::shared_ptr<typespec_pointer>(new typespec_pointer(base, position));
 	}
 
-	static auto inline make_func_typespec(const std::vector<std::shared_ptr<typespec>>& argument_types, const std::shared_ptr<typespec>& return_type)
+	static auto inline make_func_typespec(const std::vector<std::shared_ptr<typespec>>& argument_types, const std::shared_ptr<typespec>& return_type, source_pos position = source_pos())
 	{
-		return std::shared_ptr<typespec_func>(new typespec_func(argument_types, return_type));
+		return std::shared_ptr<typespec_func>(new typespec_func(argument_types, return_type, position));
 	}
 
-	static auto inline make_expr_stmt(const std::shared_ptr<expr>& expression)
+	static auto inline make_expr_stmt(const std::shared_ptr<expr>& expression, source_pos position = source_pos())
 	{
-		return std::shared_ptr<stmt_expr>(new stmt_expr(expression));
+		return std::shared_ptr<stmt_expr>(new stmt_expr(expression, position));
 	}
 
-	static auto inline make_let_stmt(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer)
+	static auto inline make_let_stmt(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer, source_pos position = source_pos())
 	{
-		return std::shared_ptr<stmt_let>(new stmt_let(name, type, initializer));
+		return std::shared_ptr<stmt_let>(new stmt_let(name, type, initializer, position));
 	}
 
-	static auto inline make_const_stmt(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer)
+	static auto inline make_const_stmt(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer, source_pos position = source_pos())
 	{
-		return std::shared_ptr<stmt_const>(new stmt_const(name, type, initializer));
+		return std::shared_ptr<stmt_const>(new stmt_const(name, type, initializer, position));
 	}
 
-	static auto inline make_return_stmt(const std::shared_ptr<expr>& ret_expr)
+	static auto inline make_return_stmt(const std::shared_ptr<expr>& ret_expr, source_pos position = source_pos())
 	{
-		return std::shared_ptr<stmt_return>(new stmt_return(ret_expr));
+		return std::shared_ptr<stmt_return>(new stmt_return(ret_expr, position));
 	}
 
-	static auto inline make_if_stmt(const std::vector<if_branch>& if_branches, const std::vector<std::shared_ptr<stmt>>& else_branch)
+	static auto inline make_if_stmt(const std::vector<if_branch>& if_branches, const std::vector<std::shared_ptr<stmt>>& else_branch, source_pos position = source_pos())
 	{
-		return std::shared_ptr<stmt_if>(new stmt_if(if_branches, else_branch));
+		return std::shared_ptr<stmt_if>(new stmt_if(if_branches, else_branch, position));
 	}
 
-	static auto inline make_import_decl(const std::string& path)
+	static auto inline make_import_decl(const std::string& path, source_pos position = source_pos())
 	{
-		return std::shared_ptr<decl_import>(new decl_import(path));
+		return std::shared_ptr<decl_import>(new decl_import(path, position));
 	}
 
-	static auto inline make_namespace_decl(const std::string& name)
+	static auto inline make_namespace_decl(const std::string& name, source_pos position = source_pos())
 	{
-		return std::shared_ptr<decl_namespace>(new decl_namespace(name));
+		return std::shared_ptr<decl_namespace>(new decl_namespace(name, position));
 	}
 
-	static auto inline make_func_decl(const std::string& name, const std::vector<func_arg>& arguments, const std::shared_ptr<typespec>& ret_type, const std::vector<std::shared_ptr<stmt>>& body)
+	static auto inline make_func_decl(const std::string& name, const std::vector<func_arg>& arguments, const std::shared_ptr<typespec>& ret_type, const std::vector<std::shared_ptr<stmt>>& body, source_pos position = source_pos())
 	{
-		return std::shared_ptr<decl_func>(new decl_func(name, arguments, ret_type, body));
+		return std::shared_ptr<decl_func>(new decl_func(name, arguments, ret_type, body, position));
 	}
 	
-	static auto inline make_struct_decl(const std::string name, const std::vector<struct_field>& fields, const std::vector<std::shared_ptr<decl_func>>& functions)
+	static auto inline make_struct_decl(const std::string name, const std::vector<struct_field>& fields, const std::vector<std::shared_ptr<decl_func>>& functions, source_pos position = source_pos())
 	{
-		return std::shared_ptr<decl_struct>(new decl_struct(name, fields, functions));
+		return std::shared_ptr<decl_struct>(new decl_struct(name, fields, functions, position));
 	}
 
-	static auto inline make_alias_decl(const std::string& name, const std::shared_ptr<typespec>& type)
+	static auto inline make_alias_decl(const std::string& name, const std::shared_ptr<typespec>& type, source_pos position = source_pos())
 	{
-		return std::shared_ptr<decl_alias>(new decl_alias(name, type));
+		return std::shared_ptr<decl_alias>(new decl_alias(name, type, position));
 	}
 }
