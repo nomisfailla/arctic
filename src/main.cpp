@@ -4,7 +4,9 @@
 
 #include "lex/lexer.h"
 #include "parse/parser.h"
+#include "check/type_checker.h"
 #include "util/source_file.h"
+#include "util/casting.h"
 
 #include "test/test_main.h"
 
@@ -143,6 +145,9 @@ static void process(const arc::source_file& input)
 			{
 				arc::parser parser(lexer_result.tokens, input);
 				auto decls = parser.parse_module();
+
+				arc::type_checker type_checker(decls);
+				type_checker.check();
 			}
 			else
 			{

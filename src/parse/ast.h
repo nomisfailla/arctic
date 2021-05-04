@@ -4,6 +4,7 @@
 #include <utility>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace arc
 {
@@ -86,6 +87,7 @@ namespace arc
 		}
 
 		virtual bool equals(const typespec& rhs) const = 0;
+		virtual size_t hash() const = 0;
 	};
 
 	struct typespec_name : public typespec
@@ -102,6 +104,11 @@ namespace arc
 			const typespec_name& r = dynamic_cast<const typespec_name&>(rhs);
 			return this->name == r.name;
 		}
+
+		size_t hash() const
+		{
+			return std::hash<std::string>()(name);
+		}
 	};
 
 	struct typespec_pointer : public typespec
@@ -117,6 +124,11 @@ namespace arc
 		{
 			const typespec_pointer& r = dynamic_cast<const typespec_pointer&>(rhs);
 			return *this->base == *r.base;
+		}
+
+		size_t hash() const
+		{
+			return 217 + this->base->hash();
 		}
 	};
 
@@ -143,6 +155,17 @@ namespace arc
 			}
 
 			return true;
+		}
+
+		size_t hash() const
+		{
+			size_t h = 71;
+			h = 113 * h + this->return_type->hash();
+			for(const auto& a : this->argument_types)
+			{
+				h = 113 * h + a->hash();
+			}
+			return h;
 		}
 	};
 
