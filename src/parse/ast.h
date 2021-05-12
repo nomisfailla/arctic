@@ -30,6 +30,7 @@ namespace arc
 	struct stmt_const;
 	struct stmt_return;
 	struct stmt_if;
+	struct stmt_block;
 
 	struct expr_integer;
 	struct expr_boolean;
@@ -62,6 +63,7 @@ namespace arc
 		virtual void visit(const stmt_const&) {}
 		virtual void visit(const stmt_return&) {}
 		virtual void visit(const stmt_if&) {}
+		virtual void visit(const stmt_block&) {}
 
 		virtual void visit(const expr_integer&) {}
 		virtual void visit(const expr_boolean&) {}
@@ -663,6 +665,37 @@ namespace arc
 				if(!this->if_branches[i].equals(r.if_branches[i])) { return false; }
 			}
 
+			for(int i = 0; i < this->else_branch.size(); i++)
+			{
+				if(*this->else_branch[i] != *r.else_branch[i]) { return false; }
+			}
+
+			return true;
+		}
+
+		void accept(ast_visitor& v) const { v.visit(*this); }
+	};
+
+	struct stmt_block : public stmt
+	{
+		const std::vector<std::shared_ptr<stmt>> block;
+
+		stmt_block(const std::vector<std::shared_ptr<stmt>>& block, source_pos position)
+			: block(block), stmt(position)
+		{
+		}
+		
+		bool equals(const stmt& rhs) const
+		{
+			const stmt_block& r = dynamic_cast<const stmt_block&>(rhs);
+
+			if(this->block.size() != r.block.size()) { return false; }
+
+			for(int i = 0; i < this->block.size(); i++)
+			{
+				if(*this->block[i] != *r.block[i]) { return false; }
+			}
+
 			return true;
 		}
 
@@ -958,6 +991,11 @@ namespace arc
 	static auto inline make_if_stmt(const std::vector<if_branch>& if_branches, const std::vector<std::shared_ptr<stmt>>& else_branch, source_pos position = source_pos())
 	{
 		return std::shared_ptr<stmt_if>(new stmt_if(if_branches, else_branch, position));
+	}
+
+	static auto inline make_block_stmt(const std::vector<std::shared_ptr<stmt>>& block, source_pos position = source_pos())
+	{
+		return std::shared_ptr<stmt_block>(new stmt_block(block, position));
 	}
 
 	static auto inline make_import_decl(const std::string& path, source_pos position = source_pos())

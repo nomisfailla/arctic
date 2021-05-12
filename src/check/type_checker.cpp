@@ -300,7 +300,12 @@ namespace arc
 						}
 					}
 				}
-				
+
+				if(auto stmt = arc::is<stmt_block>(s))
+				{
+					check_block(stmt->block);
+				}
+
 				if(auto stmt = arc::is<stmt_expr>(s))
 				{
 					std::cout << "unimplemented" << std::endl;

@@ -600,7 +600,8 @@ namespace arc
             token_type::let,
             token_type::const_,
             token_type::return_,
-            token_type::if_
+            token_type::if_,
+            token_type::l_curly
         })) {
             switch(_stream.peek_type())
             {
@@ -615,6 +616,9 @@ namespace arc
             } break;
             case token_type::if_: {
                 return parse_stmt_if();
+            } break;
+            case token_type::l_curly: {
+                return make_block_stmt(parse_stmt_block());
             } break;
             }
         } else {

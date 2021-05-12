@@ -32,6 +32,11 @@ namespace arc
             return !can_fall_through;
         }
 
+        if(auto stmt = arc::is<stmt_block>(s))
+        {
+            return is_terminating(stmt->block);
+        }
+
         return false;
     }
 
