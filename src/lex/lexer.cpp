@@ -188,7 +188,7 @@ namespace arc
                 if(ident == "as"       ) { emit(token_type::as,         "as"       ); continue; }
                 if(ident == "let"      ) { emit(token_type::let,        "let"      ); continue; }
                 if(ident == "const"    ) { emit(token_type::const_,     "const"    ); continue; }
-                if(ident == "import"   ) { emit(token_type::import,     "import"   ); continue; }
+                if(ident == "import"   ) { emit(token_type::import_,    "import"   ); continue; }
                 if(ident == "namespace") { emit(token_type::namespace_, "namespace"); continue; }
                 if(ident == "alias"    ) { emit(token_type::alias,      "alias"    ); continue; }
                 if(ident == "struct"   ) { emit(token_type::struct_,    "struct"   ); continue; }
