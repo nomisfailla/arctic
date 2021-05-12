@@ -157,6 +157,7 @@ namespace arc
 
 			if(auto expr = arc::is<expr_cast>(e))
 			{
+				// expr->types.to_type = ...;
 				std::cout << "not implemented" << std::endl;
 				std::exit(1);
 			}
@@ -180,9 +181,12 @@ namespace arc
 
 		void check()
 		{
-			for(const auto& arg : _decl->arguments)
+			_decl->types.ret_type = _type_map.get(_decl->ret_type);
+
+			for(auto& arg : _decl->arguments)
 			{
-				_scope.add(arg.name, _type_map.get(arg.type));
+				const_cast<func_arg&>(arg).types.type = _type_map.get(arg.type);
+				_scope.add(arg.name, arg.types.type);
 			}
 
 			for(const auto& s : _decl->body)
@@ -208,6 +212,7 @@ namespace arc
 						{
 							_checker.add_error("variable name '" + stmt->name + "' already taken", stmt->position);
 						}
+						stmt->types.deduced_type = var_type;
 					}
 					
 					// _    = B -> B
@@ -218,6 +223,7 @@ namespace arc
 						{
 							_checker.add_error("variable name '" + stmt->name + "' already taken", stmt->position);
 						}
+						stmt->types.deduced_type = init_type;
 					}
 
 					// _: A;    -> A
@@ -228,11 +234,13 @@ namespace arc
 						{
 							_checker.add_error("variable name '" + stmt->name + "' already taken", stmt->position);
 						}
+						stmt->types.deduced_type = var_type;
 					}
 				}
 				
 				if(auto stmt = arc::is<stmt_const>(s))
 				{
+					// stmt->types.deduced_type = ...;
 					std::cout << "unimplemented" << std::endl;
 					std::exit(1);
 				}

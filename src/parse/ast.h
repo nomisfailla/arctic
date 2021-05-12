@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include "../type/types.h"
 #include "../util/source_file.h"
 
 namespace arc
@@ -433,6 +434,11 @@ namespace arc
 		const std::shared_ptr<expr> lhs;
 		const std::shared_ptr<typespec> to_type;
 
+		struct
+		{
+			std::shared_ptr<type> to_type = nullptr;
+		} types;
+
 		expr_cast(const std::shared_ptr<expr>& lhs, const std::shared_ptr<typespec>& to_type, source_pos position)
 			: lhs(lhs), to_type(to_type), expr(position)
 		{
@@ -496,6 +502,11 @@ namespace arc
 		const std::shared_ptr<typespec> type;
 		const std::shared_ptr<expr> initializer;
 
+		struct
+		{
+			std::shared_ptr<arc::type> deduced_type = nullptr;
+		} types;
+
 		stmt_let(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer, source_pos position)
 			: name(name), type(type), initializer(initializer), stmt(position)
 		{
@@ -536,6 +547,11 @@ namespace arc
 		const std::string name;
 		const std::shared_ptr<typespec> type;
 		const std::shared_ptr<expr> initializer;
+
+		struct
+		{
+			std::shared_ptr<arc::type> deduced_type;
+		} types;
 
 		stmt_const(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer, source_pos position)
 			: name(name), type(type), initializer(initializer), stmt(position)
@@ -719,6 +735,11 @@ namespace arc
 		const std::string name;
 		const std::shared_ptr<typespec> type;
 
+		struct
+		{
+			std::shared_ptr<arc::type> type = nullptr;
+		} types;
+
 		func_arg(const std::string& name, const std::shared_ptr<typespec>& type)
 			: name(name), type(type)
 		{
@@ -736,6 +757,11 @@ namespace arc
 		const std::vector<func_arg> arguments;
 		const std::shared_ptr<typespec> ret_type;
 		const std::vector<std::shared_ptr<stmt>> body;
+
+		struct
+		{
+			std::shared_ptr<arc::type> ret_type = nullptr;
+		} types;
 
 		decl_func(
 			const std::string& name,
