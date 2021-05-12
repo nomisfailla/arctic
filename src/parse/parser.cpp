@@ -644,7 +644,7 @@ namespace arc
  
     std::shared_ptr<decl_import> parser::parse_decl_import()
     {
-        auto token = _stream.expect(token_type::import, [&]() { throw parse_error("expected 'import'"); });
+        auto token = _stream.expect(token_type::import_, [&]() { throw parse_error("expected 'import'"); });
         auto path = _stream.expect(token_type::identifier, [&]() { throw parse_error("expected an import name"); });
         _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
         return make_import_decl(path.val_string(), token.position);
@@ -741,7 +741,7 @@ namespace arc
     std::shared_ptr<decl> parser::parse_decl()
     {
         if(_stream.next_is_one_of({
-            token_type::import,
+            token_type::import_,
             token_type::namespace_,
             token_type::func,
             token_type::struct_,
@@ -749,7 +749,7 @@ namespace arc
         })) {
             switch(_stream.peek_type())
             {
-            case token_type::import: {
+            case token_type::import_: {
                 return parse_decl_import();
             } break;
             case token_type::namespace_: {

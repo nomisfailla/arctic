@@ -17,7 +17,7 @@ namespace arc
         as,          // as
         let,         // let
         const_,      // const
-        import,      // import
+        import_,      // import
         namespace_,  // namespace
         alias,       // alias
         struct_,     // struct
