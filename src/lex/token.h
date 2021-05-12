@@ -121,7 +121,7 @@ namespace arc
                 std::get<T>(value);
                 return true;
             }
-            catch(const std::bad_variant_access& e)
+            catch(const std::bad_variant_access&)
             {
                 return false;
             }

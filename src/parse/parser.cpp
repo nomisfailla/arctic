@@ -104,6 +104,8 @@ namespace arc
             return expr;
         } break;
         }
+
+        throw internal_exception("unreachable");
     }
     
     // expr0(expr)
@@ -505,6 +507,8 @@ namespace arc
             return make_pointer_typespec(parse_typespec(), token.position);
         } break;
         }
+
+        throw internal_exception("unreachable");
     }
 
     std::shared_ptr<stmt_let> parser::parse_stmt_let()
@@ -618,6 +622,8 @@ namespace arc
             _stream.expect(token_type::semi_colon, [&]() { throw parse_error("expected ';'"); });
             return make_expr_stmt(expr, expr->position);
         }
+
+        throw internal_exception("unreachable");
     }
     
     std::vector<std::shared_ptr<stmt>> parser::parse_stmt_block()
@@ -760,6 +766,8 @@ namespace arc
         {
             throw parse_error("expected a declaration");
         }
+
+        throw internal_exception("unreachable");
     }
 
     
