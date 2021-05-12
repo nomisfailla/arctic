@@ -308,8 +308,7 @@ namespace arc
 
 				if(auto stmt = arc::is<stmt_expr>(s))
 				{
-					std::cout << "unimplemented" << std::endl;
-					std::exit(1);
+					expr_checker(scope, _type_map, _checker).check(stmt->expression);
 				}
 			}
 		}
