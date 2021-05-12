@@ -50,9 +50,9 @@ namespace arc
 		type_map _type_map;
 
 		std::vector<line_exception> _errors;
+        const source_file& _source;
 
 		std::vector<std::shared_ptr<decl>> _ast;
-        const source_file& _source;
 	public:
 		type_checker(const std::vector<std::shared_ptr<decl>>& ast, const source_file& source);
 

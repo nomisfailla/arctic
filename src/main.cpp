@@ -5,6 +5,7 @@
 #include "lex/lexer.h"
 #include "parse/parser.h"
 #include "check/type_checker.h"
+#include "check/control_analyzer.h"
 #include "util/source_file.h"
 #include "util/casting.h"
 
@@ -146,15 +147,26 @@ static void process(const arc::source_file& input)
 				arc::parser parser(lexer_result.tokens, input);
 				auto decls = parser.parse_module();
 
-				arc::type_checker type_checker(decls, input);
-				auto type_checker_result = type_checker.check();
-				if(type_checker_result.size() == 0)
+				arc::control_analyzer control_analyzer(decls, input);
+				auto control_analyzer_result = control_analyzer.analyze();
+				if(control_analyzer_result.size() == 0)
 				{
-
+					arc::type_checker type_checker(decls, input);
+					auto type_checker_result = type_checker.check();
+					if(type_checker_result.size() == 0)
+					{
+					}
+					else
+					{
+						for(const auto& error : type_checker_result)
+						{
+							std::cout << format_error(error);
+						}
+					}
 				}
 				else
 				{
-					for(const auto& error : type_checker_result)
+					for(const auto& error : control_analyzer_result)
 					{
 						std::cout << format_error(error);
 					}

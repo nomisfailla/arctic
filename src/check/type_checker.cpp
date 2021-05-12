@@ -247,14 +247,36 @@ namespace arc
 				
 				if(auto stmt = arc::is<stmt_if>(s))
 				{
-					std::cout << "unimplemented" << std::endl;
-					std::exit(1);
+					// std::cout << "unimplemented" << std::endl;
+					// std::exit(1);
 				}
 				
 				if(auto stmt = arc::is<stmt_return>(s))
 				{
-					std::cout << "unimplemented" << std::endl;
-					std::exit(1);
+					auto return_type = _type_map.get(_decl->ret_type);
+					auto none_type = _type_map.get(make_name_typespec("none"));
+					if(stmt->expression == nullptr)
+					{
+						if(return_type != none_type)
+						{
+							_checker.add_error("function " + _decl->name + " must return a value", stmt->position);
+						}
+					}
+					else
+					{
+						if(return_type == none_type)
+						{
+							_checker.add_error("function " + _decl->name + " does not return a value", stmt->position);
+						}
+						else
+						{
+							auto return_val_type = expr_checker(&_scope, _type_map, _checker).check(stmt->expression);
+							if(return_type != return_val_type)
+							{
+								_checker.add_error("function " + _decl->name + " does not return that type", stmt->position);
+							}
+						}
+					}
 				}
 				
 				if(auto stmt = arc::is<stmt_expr>(s))
