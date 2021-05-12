@@ -179,6 +179,61 @@ namespace arc
 		{
 		}
 
+		std::shared_ptr<type> check_var_declaration(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer, const source_pos& position, bool is_const)
+		{
+			if(initializer == nullptr && type == nullptr)
+			{
+				_checker.add_error("cannot deduce variable type", position);
+				return _type_map.get(make_name_typespec("none"));
+			}
+			
+			// _: A = B -> A
+			if(type != nullptr && initializer != nullptr)
+			{
+				auto var_type = _type_map.get(type);
+				auto init_type = expr_checker(&_scope, _type_map, _checker).check(initializer);
+				if(init_type != var_type)
+				{
+					_checker.add_error("types cannot be assigned", position);
+				}
+
+				if(!_scope.add(name, var_type))
+				{
+					_checker.add_error("variable name '" + name + "' already taken", position);
+				}
+				return var_type;
+			}
+			
+			// _    = B -> B
+			if(type == nullptr && initializer != nullptr)
+			{
+				auto init_type = expr_checker(&_scope, _type_map, _checker).check(initializer);
+				if(!_scope.add(name, init_type))
+				{
+					_checker.add_error("variable name '" + name + "' already taken", position);
+				}
+				return init_type;
+			}
+
+			// _: A;    -> A
+			if(type != nullptr && initializer == nullptr)
+			{
+				if(is_const)
+				{
+					_checker.add_error("constant '" + name + "' must be given an initializer", position);
+				}
+
+				auto var_type = _type_map.get(type);
+				if(!_scope.add(name, var_type))
+				{
+					_checker.add_error("variable name '" + name + "' already taken", position);
+				}
+				return var_type;
+			}
+
+			throw internal_exception("unreachable");
+		}
+
 		void check()
 		{
 			_decl->types.ret_type = _type_map.get(_decl->ret_type);
@@ -193,56 +248,12 @@ namespace arc
 			{
 				if(auto stmt = arc::is<stmt_let>(s))
 				{
-					if(stmt->initializer == nullptr && stmt->type == nullptr)
-					{
-						_checker.add_error("cannot deduce variable type", stmt->position);
-					}
-					
-					// _: A = B -> A
-					if(stmt->type != nullptr && stmt->initializer != nullptr)
-					{
-						auto var_type = _type_map.get(stmt->type);
-						auto init_type = expr_checker(&_scope, _type_map, _checker).check(stmt->initializer);
-						if(init_type != var_type)
-						{
-							_checker.add_error("types cannot be assigned", stmt->position);
-						}
-
-						if(!_scope.add(stmt->name, var_type))
-						{
-							_checker.add_error("variable name '" + stmt->name + "' already taken", stmt->position);
-						}
-						stmt->types.deduced_type = var_type;
-					}
-					
-					// _    = B -> B
-					if(stmt->type == nullptr && stmt->initializer != nullptr)
-					{
-						auto init_type = expr_checker(&_scope, _type_map, _checker).check(stmt->initializer);
-						if(!_scope.add(stmt->name, init_type))
-						{
-							_checker.add_error("variable name '" + stmt->name + "' already taken", stmt->position);
-						}
-						stmt->types.deduced_type = init_type;
-					}
-
-					// _: A;    -> A
-					if(stmt->type != nullptr && stmt->initializer == nullptr)
-					{
-						auto var_type = _type_map.get(stmt->type);
-						if(!_scope.add(stmt->name, var_type))
-						{
-							_checker.add_error("variable name '" + stmt->name + "' already taken", stmt->position);
-						}
-						stmt->types.deduced_type = var_type;
-					}
+					stmt->types.deduced_type = check_var_declaration(stmt->name, stmt->type, stmt->initializer, stmt->position, false);
 				}
 				
 				if(auto stmt = arc::is<stmt_const>(s))
 				{
-					// stmt->types.deduced_type = ...;
-					std::cout << "unimplemented" << std::endl;
-					std::exit(1);
+					stmt->types.deduced_type = check_var_declaration(stmt->name, stmt->type, stmt->initializer, stmt->position, true);
 				}
 				
 				if(auto stmt = arc::is<stmt_if>(s))
