@@ -170,17 +170,22 @@ namespace arc
 	{
 	private:
 		std::shared_ptr<decl_func> _decl;
-		lexical_scope _scope;
+		lexical_scope* _global_scope;
 		type_map& _type_map;
 		type_checker& _checker;
 	public:
-		func_checker(const std::shared_ptr<decl_func>& decl, lexical_scope* parent_scope, type_map& type_map, type_checker& checker)
-			: _decl(decl), _scope(parent_scope), _type_map(type_map), _checker(checker)
+		func_checker(const std::shared_ptr<decl_func>& decl, lexical_scope* global_scope, type_map& type_map, type_checker& checker)
+			: _decl(decl), _global_scope(global_scope), _type_map(type_map), _checker(checker)
 		{
 		}
 
-		std::shared_ptr<type> check_var_declaration(const std::string& name, const std::shared_ptr<typespec>& type, const std::shared_ptr<expr>& initializer, const source_pos& position, bool is_const)
-		{
+		std::shared_ptr<type> check_var_declaration(
+			const std::string& name, const std::shared_ptr<typespec>& type,
+			const std::shared_ptr<expr>& initializer,
+			const source_pos& position,
+			bool is_const,
+			lexical_scope* scope
+		) {
 			if(initializer == nullptr && type == nullptr)
 			{
 				_checker.add_error("cannot deduce variable type", position);
@@ -191,13 +196,13 @@ namespace arc
 			if(type != nullptr && initializer != nullptr)
 			{
 				auto var_type = _type_map.get(type);
-				auto init_type = expr_checker(&_scope, _type_map, _checker).check(initializer);
+				auto init_type = expr_checker(scope, _type_map, _checker).check(initializer);
 				if(init_type != var_type)
 				{
 					_checker.add_error("types cannot be assigned", position);
 				}
 
-				if(!_scope.add(name, var_type))
+				if(!scope->add(name, var_type))
 				{
 					_checker.add_error("variable name '" + name + "' already taken", position);
 				}
@@ -207,8 +212,8 @@ namespace arc
 			// _    = B -> B
 			if(type == nullptr && initializer != nullptr)
 			{
-				auto init_type = expr_checker(&_scope, _type_map, _checker).check(initializer);
-				if(!_scope.add(name, init_type))
+				auto init_type = expr_checker(scope, _type_map, _checker).check(initializer);
+				if(!scope->add(name, init_type))
 				{
 					_checker.add_error("variable name '" + name + "' already taken", position);
 				}
@@ -224,7 +229,7 @@ namespace arc
 				}
 
 				auto var_type = _type_map.get(type);
-				if(!_scope.add(name, var_type))
+				if(!scope->add(name, var_type))
 				{
 					_checker.add_error("variable name '" + name + "' already taken", position);
 				}
@@ -234,32 +239,38 @@ namespace arc
 			throw internal_exception("unreachable");
 		}
 
-		void check()
+		void check_block(const std::vector<std::shared_ptr<stmt>>& block, lexical_scope* scope = nullptr)
 		{
-			_decl->types.ret_type = _type_map.get(_decl->ret_type);
-
-			for(auto& arg : _decl->arguments)
+			lexical_scope local_scope(scope);
+			if(scope == nullptr)
 			{
-				const_cast<func_arg&>(arg).types.type = _type_map.get(arg.type);
-				_scope.add(arg.name, arg.types.type);
+				scope = &local_scope;
 			}
 
-			for(const auto& s : _decl->body)
+			for(const auto& s : block)
 			{
 				if(auto stmt = arc::is<stmt_let>(s))
 				{
-					stmt->types.deduced_type = check_var_declaration(stmt->name, stmt->type, stmt->initializer, stmt->position, false);
+					stmt->types.deduced_type = check_var_declaration(stmt->name, stmt->type, stmt->initializer, stmt->position, false, scope);
 				}
 				
 				if(auto stmt = arc::is<stmt_const>(s))
 				{
-					stmt->types.deduced_type = check_var_declaration(stmt->name, stmt->type, stmt->initializer, stmt->position, true);
+					stmt->types.deduced_type = check_var_declaration(stmt->name, stmt->type, stmt->initializer, stmt->position, true, scope);
 				}
 				
 				if(auto stmt = arc::is<stmt_if>(s))
 				{
-					// std::cout << "unimplemented" << std::endl;
-					// std::exit(1);
+					for(const auto& branch : stmt->if_branches)
+					{
+						auto cond_type = expr_checker(scope, _type_map, _checker).check(branch.condition);
+						if(cond_type != _type_map.get(make_name_typespec("bool")))
+						{
+							_checker.add_error("if condition must be a boolean type", stmt->position);
+						}
+						check_block(branch.body);
+					}
+					check_block(stmt->else_branch);
 				}
 				
 				if(auto stmt = arc::is<stmt_return>(s))
@@ -281,7 +292,7 @@ namespace arc
 						}
 						else
 						{
-							auto return_val_type = expr_checker(&_scope, _type_map, _checker).check(stmt->expression);
+							auto return_val_type = expr_checker(scope, _type_map, _checker).check(stmt->expression);
 							if(return_type != return_val_type)
 							{
 								_checker.add_error("function " + _decl->name + " does not return that type", stmt->position);
@@ -296,6 +307,20 @@ namespace arc
 					std::exit(1);
 				}
 			}
+		}
+
+		void check()
+		{
+			lexical_scope scope(_global_scope);
+			_decl->types.ret_type = _type_map.get(_decl->ret_type);
+
+			for(auto& arg : _decl->arguments)
+			{
+				const_cast<func_arg&>(arg).types.type = _type_map.get(arg.type);
+				scope.add(arg.name, arg.types.type);
+			}
+
+			check_block(_decl->body, &scope);
 		}
 	};
 
